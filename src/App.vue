@@ -2,17 +2,28 @@
 </script>
 
 <template>
-  <main class="home">
-    <h1>oshi-cal</h1>
-    <p>偶像行程日曆（建置中）</p>
-  </main>
+  <div class="app">
+    <header class="topbar">
+      <router-link to="/" class="brand">oshi-cal</router-link>
+      <nav>
+        <router-link to="/">今日</router-link>
+        <router-link to="/idols">偶像</router-link>
+      </nav>
+    </header>
+    <main>
+      <router-view />
+    </main>
+  </div>
 </template>
 
 <style scoped>
-.home {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  text-align: center;
+.app { max-width: 720px; margin: 0 auto; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 1rem; border-bottom: 1px solid #eee;
 }
+.brand { font-weight: 700; font-size: 1.1rem; text-decoration: none; color: #111; }
+nav { display: flex; gap: 1rem; }
+nav a { text-decoration: none; color: #666; }
+nav a.router-link-active { color: #111; font-weight: 600; }
 </style>
