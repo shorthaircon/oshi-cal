@@ -4,6 +4,7 @@ const CURRENT_VERSION = 1
 const EMPTY = {
   version: CURRENT_VERSION,
   lastBackupAt: null,
+  lastBackupCount: { idols: 0, events: 0 },
   idols: [],
   events: [],
 }
@@ -32,7 +33,11 @@ export function saveAll(data) {
 
 export function markBackup() {
   const data = loadAll()
-  saveAll({ ...data, lastBackupAt: new Date().toISOString() })
+  saveAll({
+    ...data,
+    lastBackupAt: new Date().toISOString(),
+    lastBackupCount: { idols: data.idols.length, events: data.events.length },
+  })
 }
 
 export function replaceAll(incoming) {
@@ -53,6 +58,7 @@ function normalize(data) {
   return {
     version: CURRENT_VERSION,
     lastBackupAt: data.lastBackupAt ?? null,
+    lastBackupCount: data.lastBackupCount ?? { idols: 0, events: 0 },
     idols: Array.isArray(data.idols) ? data.idols : [],
     events: Array.isArray(data.events) ? data.events : [],
   }

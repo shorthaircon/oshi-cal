@@ -1,4 +1,20 @@
 <script setup>
+import { computed } from 'vue'
+import { useIdolsStore } from './stores/idols.js'
+import { useEventsStore } from './stores/events.js'
+import { useMetaStore } from './stores/meta.js'
+import { needsBackup } from './lib/backupReminder.js'
+
+const idolsStore = useIdolsStore()
+const eventsStore = useEventsStore()
+const metaStore = useMetaStore()
+
+const showDot = computed(() => needsBackup({
+  idols: idolsStore.idols,
+  events: eventsStore.events,
+  lastBackupAt: metaStore.lastBackupAt,
+  lastBackupCount: metaStore.lastBackupCount,
+}))
 </script>
 
 <template>
@@ -9,7 +25,10 @@
         <router-link to="/">今日</router-link>
         <router-link to="/events">活動</router-link>
         <router-link to="/idols">偶像</router-link>
-        <router-link to="/settings">設定</router-link>
+        <router-link to="/settings" class="settings-link">
+          設定
+          <span v-if="showDot" class="dot" title="14 天未備份"></span>
+        </router-link>
       </nav>
     </header>
     <main>
@@ -28,4 +47,10 @@
 nav { display: flex; gap: 1rem; }
 nav a { text-decoration: none; color: #666; }
 nav a.router-link-active { color: #111; font-weight: 600; }
+.settings-link { position: relative; }
+.dot {
+  display: inline-block; width: 8px; height: 8px;
+  background: #ef4444; border-radius: 50%;
+  position: absolute; top: -2px; right: -10px;
+}
 </style>

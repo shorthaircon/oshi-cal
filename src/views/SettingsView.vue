@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { loadAll, replaceAll, markBackup, CURRENT_VERSION } from '../lib/storage.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
+import { useMetaStore } from '../stores/meta.js'
 
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
+const metaStore = useMetaStore()
 
 const fileInput = ref(null)
 const preview = ref(null) // { idolCount, eventCount, version, data, warning }
@@ -22,6 +24,7 @@ function exportJson() {
   a.click()
   URL.revokeObjectURL(url)
   markBackup()
+  metaStore.refresh()
   message.value = `已匯出（${data.idols.length} 偶像 / ${data.events.length} 活動）`
 }
 
@@ -64,6 +67,7 @@ function confirmImport() {
   replaceAll(preview.value.data)
   idolsStore.reload()
   eventsStore.reload()
+  metaStore.refresh()
   message.value = `已匯入（${preview.value.idolCount} 偶像 / ${preview.value.eventCount} 活動）`
   preview.value = null
 }
