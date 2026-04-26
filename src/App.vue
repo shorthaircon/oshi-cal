@@ -9,6 +9,7 @@
         <router-link to="/">今日</router-link>
         <router-link to="/events">活動</router-link>
         <router-link to="/idols">偶像</router-link>
+        <router-link to="/settings">設定</router-link>
       </nav>
     </header>
     <main>

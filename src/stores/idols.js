@@ -40,6 +40,10 @@ export const useIdolsStore = defineStore('idols', {
       this._persist()
     },
 
+    reload() {
+      this.idols = loadAll().idols
+    },
+
     _persist() {
       const data = loadAll()
       saveAll({ ...data, idols: this.idols })

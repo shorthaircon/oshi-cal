@@ -30,6 +30,17 @@ export function saveAll(data) {
   }
 }
 
+export function markBackup() {
+  const data = loadAll()
+  saveAll({ ...data, lastBackupAt: new Date().toISOString() })
+}
+
+export function replaceAll(incoming) {
+  saveAll(normalize(incoming))
+}
+
+export { CURRENT_VERSION }
+
 function migrate(data) {
   if (!data || typeof data !== 'object') return { ...EMPTY }
   const v = data.version ?? 0

@@ -60,6 +60,10 @@ export const useEventsStore = defineStore('events', {
       this._persist()
     },
 
+    reload() {
+      this.events = loadAll().events
+    },
+
     _persist() {
       const data = loadAll()
       saveAll({ ...data, events: this.events })
