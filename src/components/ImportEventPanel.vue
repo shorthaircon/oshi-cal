@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { parseEventernoteEvent } from '../lib/eventernoteParser.js'
+import { parseEventernoteEvent, parseEventernoteActorList } from '../lib/eventernoteParser.js'
 import { classifyEventernoteUrl } from '../lib/eventernoteUrl.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
@@ -16,9 +16,11 @@ const eventsStore = useEventsStore()
 
 const url = ref('')
 const status = ref('idle') // idle | loading | preview | error
+const mode = ref('single') // single | batch
 const errorMsg = ref('')
-const parsed = ref(null) // { title, startAt, endAt, venue, sourceUrl, idolNames }
-const selections = ref([]) // [{ name, existing, selected }]
+const parsed = ref(null) // single mode
+const selections = ref([]) // single mode: [{ name, existing, selected }]
+const batchItems = ref([]) // batch mode: [{ event, selected, alreadyImported, idolSelections }]
 
 function buildSelections(idolNames) {
   return idolNames.map(name => {
@@ -37,42 +39,63 @@ const duplicate = computed(() => {
 async function go() {
   errorMsg.value = ''
   parsed.value = null
-  const cls = classifyEventernoteUrl(url.value.trim())
+  batchItems.value = []
+  const target = url.value.trim()
+  const cls = classifyEventernoteUrl(target)
   if (cls.kind === 'invalid') return setError('請貼 Eventernote 網址')
-  if (cls.kind === 'actor') return setError('這是偶像列表頁，批次匯入功能尚未開放（US-009）')
-  if (cls.kind !== 'event') return setError('無法判斷網址格式')
+  if (cls.kind === 'unknown') return setError('無法判斷網址格式')
   if (!PROXY) return setError('Proxy 未設定（VITE_PROXY_URL）')
 
   status.value = 'loading'
   try {
-    const r = await fetch(`${PROXY}/?url=${encodeURIComponent(url.value.trim())}`)
+    const r = await fetch(`${PROXY}/?url=${encodeURIComponent(target)}`)
     if (!r.ok) throw new Error(`Proxy 回應 ${r.status}`)
     const html = await r.text()
-    const result = parseEventernoteEvent(html, url.value.trim())
-    if (!result.ok) {
-      // fallback to manual form with partial fields
-      emit('fallback', { partial: result.partial, reason: result.reason })
-      return
+
+    if (cls.kind === 'event') {
+      mode.value = 'single'
+      const result = parseEventernoteEvent(html, target)
+      if (!result.ok) {
+        emit('fallback', { partial: result.partial, reason: result.reason })
+        return
+      }
+      parsed.value = result.event
+      selections.value = buildSelections(result.event.idolNames)
+    } else if (cls.kind === 'actor') {
+      mode.value = 'batch'
+      const result = parseEventernoteActorList(html)
+      if (!result.ok) return setError(`列表解析失敗：${result.reason}`)
+      batchItems.value = result.events.map(ev => {
+        const exists = eventsStore.events.some(e => e.sourceUrl === ev.sourceUrl)
+        const isPast = ev.startAt && new Date(ev.startAt).getTime() < Date.now()
+        return {
+          event: ev,
+          alreadyImported: exists,
+          selected: !exists && !isPast,
+          idolSelections: buildSelections(ev.idolNames),
+        }
+      })
     }
-    parsed.value = result.event
-    selections.value = buildSelections(result.event.idolNames)
     status.value = 'preview'
   } catch (e) {
     setError(`抓取失敗：${e.message}`)
   }
 }
 
+const batchSelectedCount = computed(
+  () => batchItems.value.filter(x => x.selected && !x.alreadyImported).length
+)
+function batchSelectAll() { batchItems.value.forEach(x => { if (!x.alreadyImported) x.selected = true }) }
+function batchSelectNone() { batchItems.value.forEach(x => x.selected = false) }
+
 function setError(msg) {
   status.value = 'error'
   errorMsg.value = msg
 }
 
-function confirmImport() {
-  if (!parsed.value) return
-
-  // Only process selected idols
+function resolveIdolIds(idolSelections) {
   const idolIds = []
-  for (const s of selections.value) {
+  for (const s of idolSelections) {
     if (!s.selected) continue
     if (s.existing) {
       idolIds.push(s.existing.id)
@@ -82,16 +105,36 @@ function confirmImport() {
       idolIds.push(idol.id)
     }
   }
+  return idolIds
+}
 
+function confirmImport() {
+  if (!parsed.value) return
   eventsStore.add({
     title: parsed.value.title,
     startAt: parsed.value.startAt,
     endAt: parsed.value.endAt,
     venue: parsed.value.venue ?? '',
     sourceUrl: parsed.value.sourceUrl,
-    idolIds,
+    idolIds: resolveIdolIds(selections.value),
     status: 'going',
   })
+  emit('done')
+}
+
+function confirmBatchImport() {
+  for (const item of batchItems.value) {
+    if (!item.selected || item.alreadyImported) continue
+    eventsStore.add({
+      title: item.event.title,
+      startAt: item.event.startAt,
+      endAt: item.event.endAt,
+      venue: item.event.venue ?? '',
+      sourceUrl: item.event.sourceUrl,
+      idolIds: resolveIdolIds(item.idolSelections),
+      status: 'going',
+    })
+  }
   emit('done')
 }
 
@@ -120,7 +163,52 @@ function fmt(iso) {
 
     <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
 
-    <div v-if="parsed" class="preview">
+    <div v-if="status === 'preview' && mode === 'batch' && batchItems.length" class="preview">
+      <div class="batch-head">
+        <strong>從偶像列表頁解析到 {{ batchItems.length }} 筆活動</strong>
+        <span class="muted">（已勾選 {{ batchSelectedCount }} 筆要匯入）</span>
+        <button class="ghost small" @click="batchSelectAll">全選</button>
+        <button class="ghost small" @click="batchSelectNone">全不選</button>
+      </div>
+      <p class="hint">已匯入的會跳過。過去日期預設不勾。每筆可單獨展開調整偶像勾選。</p>
+      <ul class="batch-list">
+        <li v-for="item in batchItems" :key="item.event.sourceUrl" class="batch-item" :class="{ disabled: item.alreadyImported }">
+          <label class="batch-row">
+            <input type="checkbox" v-model="item.selected" :disabled="item.alreadyImported" />
+            <div class="batch-meta">
+              <div class="batch-title">{{ item.event.title }}</div>
+              <div class="batch-sub">
+                {{ fmt(item.event.startAt) }} JST
+                <span v-if="item.event.venue"> · {{ item.event.venue }}</span>
+              </div>
+            </div>
+            <span v-if="item.alreadyImported" class="tag">已匯入</span>
+          </label>
+          <details v-if="item.selected && !item.alreadyImported && item.idolSelections.length" class="batch-idols">
+            <summary>偶像 ({{ item.idolSelections.filter(s => s.selected).length }} / {{ item.idolSelections.length }})</summary>
+            <ul class="sel-list">
+              <li v-for="s in item.idolSelections" :key="s.name" class="sel">
+                <label>
+                  <input type="checkbox" v-model="s.selected" />
+                  <span class="dot" v-if="s.existing" :style="{ background: s.existing.color }" />
+                  <span class="dot placeholder" v-else />
+                  <span class="name">{{ s.name }}</span>
+                  <span class="tag" :class="{ new: !s.existing }">{{ s.existing ? '已存在' : '不存在' }}</span>
+                </label>
+              </li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+      <div class="actions">
+        <button @click="confirmBatchImport" :disabled="batchSelectedCount === 0">
+          匯入 {{ batchSelectedCount }} 筆
+        </button>
+        <button class="ghost" @click="emit('cancel')">取消</button>
+      </div>
+    </div>
+
+    <div v-if="status === 'preview' && mode === 'single' && parsed" class="preview">
       <p v-if="duplicate" class="warn">
         ⚠️ 已有相同 sourceUrl 的活動「{{ duplicate.title }}」，匯入會建立第二筆。
       </p>
@@ -200,5 +288,18 @@ dd { margin: 0; }
 .name { flex: 1; }
 .tag { font-size: .7rem; padding: .1rem .4rem; border-radius: 999px; background: #e5e7eb; color: #374151; }
 .tag.new { background: #fef3c7; color: #92400e; }
+
+.batch-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.batch-head .muted { color: #666; font-size: .85rem; }
+.small { font-size: .8rem; padding: .25rem .5rem; }
+.batch-list { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: .5rem; max-height: 26rem; overflow-y: auto; }
+.batch-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: .5rem .75rem; }
+.batch-item.disabled { opacity: .55; }
+.batch-row { display: flex; gap: .6rem; align-items: flex-start; cursor: pointer; }
+.batch-meta { flex: 1; }
+.batch-title { font-weight: 500; font-size: .95rem; }
+.batch-sub { font-size: .8rem; color: #666; }
+.batch-idols { margin-top: .5rem; padding-left: 1.5rem; }
+.batch-idols summary { font-size: .8rem; color: #555; cursor: pointer; }
 .actions { display: flex; gap: .5rem; }
 </style>

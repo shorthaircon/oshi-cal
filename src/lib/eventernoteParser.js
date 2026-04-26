@@ -132,3 +132,73 @@ function extractActorsFromOg(desc) {
   if (parts.length < 3) return []
   return parts[2].split(/[,、]/).map(s => s.trim()).filter(Boolean)
 }
+
+// Parse an Eventernote actor list page into multiple events.
+// Returns { ok: true, events: [...] } or { ok: false, reason }.
+export function parseEventernoteActorList(html) {
+  let doc
+  try {
+    doc = new DOMParser().parseFromString(html, 'text/html')
+  } catch (e) {
+    return { ok: false, reason: `HTML 解析失敗: ${e.message}`, events: [] }
+  }
+
+  const items = doc.querySelectorAll('.gb_event_list li.clearfix')
+  if (!items.length) return { ok: false, reason: '找不到活動列表（.gb_event_list li）', events: [] }
+
+  const events = []
+  for (const li of items) {
+    const a = li.querySelector('.event h4 a, h4 a')
+    const href = a?.getAttribute('href') ?? ''
+    const idMatch = href.match(/^\/events\/(\d+)/)
+    if (!idMatch) continue
+
+    const sourceUrl = `https://www.eventernote.com${href}`
+    const title = (a?.textContent ?? '').trim()
+
+    const dateText = li.querySelector('.date p')?.textContent.trim() ?? ''
+    const dateStr = (dateText.match(/(\d{4})-(\d{1,2})-(\d{1,2})/) ?? [])
+      .slice(1).map(s => s ? pad(s) : s)
+    const date = dateStr.length === 3 ? `${dateStr[0]}-${dateStr[1]}-${dateStr[2]}` : null
+
+    const placeBlocks = li.querySelectorAll('.event .place')
+    let venue = null
+    let times = { start: null, end: null }
+    for (const p of placeBlocks) {
+      const text = p.textContent.replace(/\s+/g, ' ').trim()
+      if (text.startsWith('会場:')) {
+        venue = p.querySelector('a')?.textContent.trim()
+          ?? text.replace(/^会場:\s*/, '').trim()
+      } else if (/開[場演]/.test(text)) {
+        times = extractTimesFromText(text)
+      }
+    }
+
+    const actorLinks = li.querySelectorAll('.actor ul li a')
+    const idolNames = Array.from(new Set(
+      Array.from(actorLinks).map(el => el.textContent.trim()).filter(Boolean)
+    ))
+
+    if (!title || !date) continue
+
+    events.push({
+      title,
+      startAt: combineJst(date, times.start),
+      endAt: combineJst(date, times.end),
+      venue: venue || null,
+      sourceUrl,
+      idolNames,
+    })
+  }
+
+  return events.length ? { ok: true, events } : { ok: false, reason: '解析後沒有有效活動', events: [] }
+}
+
+function extractTimesFromText(text) {
+  const start = (text.match(/開演\s*(\d{1,2}:\d{2})/) ?? text.match(/開場\s*(\d{1,2}:\d{2})/))?.[1]
+  const end = text.match(/終演\s*(\d{1,2}:\d{2})/)?.[1]
+  return {
+    start: start ? normalizeTime(start) : null,
+    end: end ? normalizeTime(end) : null,
+  }
+}
