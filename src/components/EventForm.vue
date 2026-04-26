@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { STATUSES } from '../stores/events.js'
+import { isoToJstLocalInput, jstLocalInputToIso } from '../lib/time.js'
 
 const props = defineProps({
   initial: { type: Object, default: null },
@@ -22,7 +23,7 @@ const notes = ref('')
 function loadFromInitial(v) {
   title.value = v?.title ?? ''
   idolIds.value = [...(v?.idolIds ?? [])]
-  startAt.value = v?.startAt ? toLocal(v.startAt) : ''
+  startAt.value = v?.startAt ? isoToJstLocalInput(v.startAt) : ''
   venue.value = v?.venue ?? ''
   status.value = v?.status ?? 'going'
   ticketPrice.value = v?.ticketPrice != null ? String(v.ticketPrice) : ''
@@ -32,25 +33,12 @@ function loadFromInitial(v) {
 loadFromInitial(props.initial)
 watch(() => props.initial, loadFromInitial)
 
-// datetime-local 用 'YYYY-MM-DDTHH:mm' 無時區。存 ISO 時當作裝置本地時間。
-function toLocal(iso) {
-  const d = new Date(iso)
-  if (isNaN(d)) return ''
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-function fromLocal(local) {
-  if (!local) return null
-  const d = new Date(local)
-  return isNaN(d) ? null : d.toISOString()
-}
-
 function submit() {
   if (!title.value.trim() || !startAt.value) return
   emit('submit', {
     title: title.value.trim(),
     idolIds: idolIds.value,
-    startAt: fromLocal(startAt.value),
+    startAt: jstLocalInputToIso(startAt.value),
     endAt: null,
     venue: venue.value.trim(),
     status: status.value,
@@ -83,7 +71,7 @@ function submit() {
     </div>
 
     <label class="row">
-      <span>開始時間 <em>*</em></span>
+      <span>開始時間 <em>*</em>（日本時間 JST）</span>
       <input v-model="startAt" type="datetime-local" required />
     </label>
 

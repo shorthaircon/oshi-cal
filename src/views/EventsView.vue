@@ -3,11 +3,14 @@ import { ref, computed } from 'vue'
 import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import EventForm from '../components/EventForm.vue'
+import ImportEventPanel from '../components/ImportEventPanel.vue'
+import { formatJst } from '../lib/time.js'
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
-const mode = ref('list')
+const mode = ref('list') // 'list' | 'add' | 'edit' | 'import'
 const editingId = ref(null)
+const fallbackInitial = ref(null)
 
 const editing = computed(() =>
   editingId.value ? eventsStore.byId(editingId.value) : null
@@ -21,9 +24,23 @@ const sorted = computed(() =>
   })
 )
 
-function startAdd() { editingId.value = null; mode.value = 'add' }
+function startAdd() { editingId.value = null; fallbackInitial.value = null; mode.value = 'add' }
 function startEdit(id) { editingId.value = id; mode.value = 'edit' }
-function cancel() { mode.value = 'list'; editingId.value = null }
+function startImport() { mode.value = 'import' }
+function cancel() { mode.value = 'list'; editingId.value = null; fallbackInitial.value = null }
+function onImportFallback({ partial, reason }) {
+  alert(`自動解析失敗：${reason}\n已開啟手動表單，部分欄位已預填。`)
+  fallbackInitial.value = {
+    title: partial.title ?? '',
+    startAt: partial.startAt ?? null,
+    endAt: partial.endAt ?? null,
+    venue: partial.venue ?? '',
+    sourceUrl: partial.sourceUrl ?? null,
+    idolIds: [],
+    status: 'going',
+  }
+  mode.value = 'add'
+}
 function onSubmit(payload) {
   if (mode.value === 'add') eventsStore.add(payload)
   else if (mode.value === 'edit' && editingId.value) eventsStore.update(editingId.value, payload)
@@ -32,13 +49,7 @@ function onSubmit(payload) {
 function onDelete(ev) {
   if (confirm(`確定刪除「${ev.title}」？`)) eventsStore.remove(ev.id)
 }
-function fmt(iso) {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (isNaN(d)) return ''
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+const fmt = formatJst
 function statusLabel(v) {
   return STATUSES.find(s => s.value === v)?.label ?? v
 }
@@ -53,8 +64,18 @@ function idolsOf(ev) {
   <section class="events">
     <header class="head">
       <h2>活動</h2>
-      <button v-if="mode === 'list'" class="add-btn" @click="startAdd">+ 新增</button>
+      <div v-if="mode === 'list'" class="head-actions">
+        <button class="ghost-btn" @click="startImport">貼 URL 匯入</button>
+        <button class="add-btn" @click="startAdd">+ 新增</button>
+      </div>
     </header>
+
+    <ImportEventPanel
+      v-if="mode === 'import'"
+      @done="cancel"
+      @cancel="cancel"
+      @fallback="onImportFallback"
+    />
 
     <div v-if="mode === 'list'">
       <p v-if="sorted.length === 0" class="empty">
@@ -67,7 +88,7 @@ function idolsOf(ev) {
             <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
           </div>
           <div class="line2">
-            <span class="time">🕐 {{ fmt(ev.startAt) }}{{ ev.endAt ? ` ~ ${fmt(ev.endAt)}` : '' }}</span>
+            <span class="time">🕐 {{ fmt(ev.startAt) }}{{ ev.endAt ? ` ~ ${fmt(ev.endAt)}` : '' }} <span class="tz">JST</span></span>
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">
@@ -88,9 +109,13 @@ function idolsOf(ev) {
       </ul>
     </div>
 
-    <div v-else class="form-wrap">
+    <div v-else-if="mode === 'add' || mode === 'edit'" class="form-wrap">
       <h3>{{ mode === 'add' ? '新增活動' : '編輯活動' }}</h3>
-      <EventForm :initial="editing" @submit="onSubmit" @cancel="cancel" />
+      <EventForm
+        :initial="editing ?? fallbackInitial"
+        @submit="onSubmit"
+        @cancel="cancel"
+      />
     </div>
   </section>
 </template>
@@ -99,9 +124,14 @@ function idolsOf(ev) {
 .events { padding: 1rem; }
 .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .head h2 { margin: 0; }
+.head-actions { display: flex; gap: .5rem; }
 .add-btn {
   padding: .4rem .8rem; border: none; border-radius: 6px;
   background: #111; color: #fff; cursor: pointer; font-size: .9rem;
+}
+.ghost-btn {
+  padding: .4rem .8rem; border: 1px solid #ccc; border-radius: 6px;
+  background: #fff; color: #333; cursor: pointer; font-size: .9rem;
 }
 .empty { padding: 2rem 0; text-align: center; color: #888; }
 .list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .75rem; }
@@ -111,6 +141,7 @@ function idolsOf(ev) {
 }
 .line1 { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 .line2 { display: flex; flex-wrap: wrap; gap: .75rem; font-size: .85rem; color: #555; }
+.tz { font-size: .7rem; color: #999; }
 .status {
   font-size: .75rem; padding: .15rem .5rem; border-radius: 999px;
   background: #e5e7eb; color: #374151;
