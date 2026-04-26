@@ -7,6 +7,7 @@
       <router-link to="/" class="brand">oshi-cal</router-link>
       <nav>
         <router-link to="/">今日</router-link>
+        <router-link to="/events">活動</router-link>
         <router-link to="/idols">偶像</router-link>
       </nav>
     </header>
