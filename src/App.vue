@@ -24,6 +24,7 @@ const showDot = computed(() => needsBackup({
       <nav>
         <router-link to="/">月曆</router-link>
         <router-link to="/timeline">時間軸</router-link>
+        <router-link to="/by-oshi">依推し</router-link>
         <router-link to="/events">活動</router-link>
         <router-link to="/idols">推し</router-link>
         <router-link to="/settings" class="settings-link">
