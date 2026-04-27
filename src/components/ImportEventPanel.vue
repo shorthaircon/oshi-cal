@@ -165,12 +165,12 @@ function fmt(iso) {
 
     <div v-if="status === 'preview' && mode === 'batch' && batchItems.length" class="preview">
       <div class="batch-head">
-        <strong>從偶像列表頁解析到 {{ batchItems.length }} 筆活動</strong>
+        <strong>從推し列表頁解析到 {{ batchItems.length }} 筆活動</strong>
         <span class="muted">（已勾選 {{ batchSelectedCount }} 筆要匯入）</span>
         <button class="ghost small" @click="batchSelectAll">全選</button>
         <button class="ghost small" @click="batchSelectNone">全不選</button>
       </div>
-      <p class="hint">已匯入的會跳過。過去日期預設不勾。每筆可單獨展開調整偶像勾選。</p>
+      <p class="hint">已匯入的會跳過。過去日期預設不勾。每筆可單獨展開調整推し勾選。</p>
       <ul class="batch-list">
         <li v-for="item in batchItems" :key="item.event.sourceUrl" class="batch-item" :class="{ disabled: item.alreadyImported }">
           <label class="batch-row">
@@ -185,7 +185,7 @@ function fmt(iso) {
             <span v-if="item.alreadyImported" class="tag">已匯入</span>
           </label>
           <details v-if="item.selected && !item.alreadyImported && item.idolSelections.length" class="batch-idols">
-            <summary>偶像 ({{ item.idolSelections.filter(s => s.selected).length }} / {{ item.idolSelections.length }})</summary>
+            <summary>推し ({{ item.idolSelections.filter(s => s.selected).length }} / {{ item.idolSelections.length }})</summary>
             <ul class="sel-list">
               <li v-for="s in item.idolSelections" :key="s.name" class="sel">
                 <label>
@@ -217,10 +217,10 @@ function fmt(iso) {
         <dt>開始</dt><dd>{{ fmt(parsed.startAt) }} <span class="muted">JST</span></dd>
         <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt) : '（未提供）' }}</dd>
         <dt>地點</dt><dd>{{ parsed.venue || '（未提供）' }}</dd>
-        <dt>偶像</dt>
+        <dt>推し</dt>
         <dd>
           <p v-if="selections.length === 0" class="muted">（未偵測到）</p>
-          <p v-else class="hint">勾選要綁定的偶像。「不存在」勾起來會自動建立並推薦顏色。</p>
+          <p v-else class="hint">勾選要綁定的推し。「不存在」勾起來會自動建立並推薦顏色。</p>
           <ul v-if="selections.length" class="sel-list">
             <li v-for="s in selections" :key="s.name" class="sel">
               <label>
@@ -233,7 +233,7 @@ function fmt(iso) {
             </li>
           </ul>
           <p v-if="selections.length && noneSelected" class="hint warn">
-            未勾任何偶像，活動仍可匯入，僅記錄時間與地點。可之後在編輯活動時再加。
+            未勾任何推し，活動仍可匯入，僅記錄時間與地點。可之後在編輯活動時再加。
           </p>
         </dd>
       </dl>

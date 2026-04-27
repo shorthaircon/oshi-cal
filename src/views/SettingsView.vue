@@ -25,7 +25,7 @@ function exportJson() {
   URL.revokeObjectURL(url)
   markBackup()
   metaStore.refresh()
-  message.value = `已匯出（${data.idols.length} 偶像 / ${data.events.length} 活動）`
+  message.value = `已匯出（${data.idols.length} 推し / ${data.events.length} 活動）`
 }
 
 function pickFile() {
@@ -68,7 +68,7 @@ function confirmImport() {
   idolsStore.reload()
   eventsStore.reload()
   metaStore.refresh()
-  message.value = `已匯入（${preview.value.idolCount} 偶像 / ${preview.value.eventCount} 活動）`
+  message.value = `已匯入（${preview.value.idolCount} 推し / ${preview.value.eventCount} 活動）`
   preview.value = null
 }
 
@@ -108,7 +108,7 @@ function stamp(d) {
     <div v-if="preview" class="card preview">
       <h3>確認匯入</h3>
       <ul>
-        <li>偶像：{{ preview.idolCount }} 筆</li>
+        <li>推し：{{ preview.idolCount }} 筆</li>
         <li>活動：{{ preview.eventCount }} 筆</li>
         <li>備份版本：{{ preview.version ?? '未指定' }}</li>
       </ul>

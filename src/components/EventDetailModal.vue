@@ -61,7 +61,7 @@ function onDelete() {
             <dt v-if="event.endAt">結束</dt><dd v-if="event.endAt">{{ formatJst(event.endAt) }} <span class="muted">JST</span></dd>
             <dt>地點</dt><dd>{{ event.venue || '—' }}</dd>
             <dt>狀態</dt><dd>{{ statusLabel }}</dd>
-            <dt>偶像</dt>
+            <dt>推し</dt>
             <dd>
               <span v-if="!idols.length" class="muted">—</span>
               <IdolChip v-for="i in idols" :key="i.id" :idol="i" size="md" />

@@ -47,7 +47,7 @@ function onCustom(e) {
       />
       <span class="preview" :style="{ background: customValid ? modelValue : 'transparent' }" />
     </label>
-    <p v-if="clash" class="warn">⚠️ 與其他偶像撞色，仍可儲存</p>
+    <p v-if="clash" class="warn">⚠️ 與其他推し撞色，仍可儲存</p>
     <p v-if="!customValid" class="err">hex 格式不正確（需 #RRGGBB）</p>
   </div>
 </template>

@@ -25,7 +25,7 @@ const showDot = computed(() => needsBackup({
         <router-link to="/">月曆</router-link>
         <router-link to="/timeline">時間軸</router-link>
         <router-link to="/events">活動</router-link>
-        <router-link to="/idols">偶像</router-link>
+        <router-link to="/idols">推し</router-link>
         <router-link to="/settings" class="settings-link">
           設定
           <span v-if="showDot" class="dot" title="14 天未備份"></span>

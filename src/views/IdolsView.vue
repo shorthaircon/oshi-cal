@@ -45,13 +45,13 @@ function onDelete(idol) {
 <template>
   <section class="idols">
     <header class="head">
-      <h2>偶像</h2>
+      <h2>推し</h2>
       <button v-if="mode === 'list'" class="add-btn" @click="startAdd">+ 新增</button>
     </header>
 
     <div v-if="mode === 'list'">
       <p v-if="store.idols.length === 0" class="empty">
-        還沒有任何偶像，按右上「+ 新增」開始。
+        還沒有任何推し，按右上「+ 新增」開始。
       </p>
       <ul v-else class="list">
         <li v-for="idol in store.idols" :key="idol.id" class="item">
@@ -65,7 +65,7 @@ function onDelete(idol) {
     </div>
 
     <div v-else class="form-wrap">
-      <h3>{{ mode === 'add' ? '新增偶像' : '編輯偶像' }}</h3>
+      <h3>{{ mode === 'add' ? '新增推し' : '編輯推し' }}</h3>
       <IdolForm
         :initial="editing"
         :other-hexes="otherHexes"

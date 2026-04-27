@@ -77,9 +77,9 @@ function submit() {
     </label>
 
     <div class="row">
-      <span>偶像（可多選）</span>
+      <span>推し（可多選）</span>
       <div v-if="idolsStore.idols.length === 0" class="hint">
-        還沒有偶像。<router-link to="/idols">去新增</router-link>
+        還沒有推し。<router-link to="/idols">去新增</router-link>
       </div>
       <div v-else class="idol-checks">
         <label v-for="i in idolsStore.idols" :key="i.id" class="chk">
