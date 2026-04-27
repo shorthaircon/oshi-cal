@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { loadAll, saveAll } from '../lib/storage.js'
+import { findConflicts } from '../lib/conflictResolver.js'
 
 export const STATUSES = [
   { value: 'going', label: '預定參加' },
@@ -36,6 +37,13 @@ export const useEventsStore = defineStore('events', {
     byId: (state) => (id) => state.events.find(e => e.id === id),
     byIdolId: (state) => (idolId) =>
       state.events.filter(e => e.idolIds.includes(idolId)),
+    conflictMap: (state) => findConflicts(state.events),
+    conflictsOf() {
+      return (id) => {
+        const ids = this.conflictMap.get(id) ?? []
+        return ids.map(x => this.byId(x)).filter(Boolean)
+      }
+    },
   },
 
   actions: {

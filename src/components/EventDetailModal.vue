@@ -9,10 +9,20 @@ import IdolChip from './IdolChip.vue'
 const props = defineProps({
   event: { type: Object, default: null },
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'select'])
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
+
+const conflicts = computed(() =>
+  props.event ? eventsStore.conflictsOf(props.event.id) : []
+)
+function jumpTo(ev) {
+  // re-emit close so parent can re-open with new event; simplest: have parent handle via watch
+  emit('close')
+  // small timeout: parent should receive close, then we set selected via emit('select')
+  setTimeout(() => emit('select', ev), 0)
+}
 
 const editing = ref(false)
 watch(() => props.event, () => { editing.value = false })
@@ -55,7 +65,20 @@ function onDelete() {
           <h3>
             {{ event.title }}
             <span v-if="isPast" class="past-tag">已過</span>
+            <span v-if="conflicts.length" class="conflict-tag" title="時間衝突">⚠️ {{ conflicts.length }} 場衝突</span>
           </h3>
+
+          <div v-if="conflicts.length" class="conflict-box">
+            <p>時間衝突的活動：</p>
+            <ul>
+              <li v-for="c in conflicts" :key="c.id">
+                <button type="button" class="link" @click="jumpTo(c)">
+                  {{ formatJst(c.startAt) }} · {{ c.title }}
+                </button>
+              </li>
+            </ul>
+          </div>
+
           <dl>
             <dt>開始</dt><dd>{{ formatJst(event.startAt) }} <span class="muted">JST</span></dd>
             <dt v-if="event.endAt">結束</dt><dd v-if="event.endAt">{{ formatJst(event.endAt) }} <span class="muted">JST</span></dd>
@@ -116,6 +139,21 @@ function onDelete() {
   font-size: .7rem; padding: .15rem .5rem; border-radius: 999px;
   background: #f3f4f6; color: #888; margin-left: .5rem; vertical-align: middle;
 }
+.conflict-tag {
+  font-size: .7rem; padding: .15rem .5rem; border-radius: 999px;
+  background: #fef3c7; color: #92400e; margin-left: .5rem; vertical-align: middle;
+}
+.conflict-box {
+  background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px;
+  padding: .5rem .75rem; margin-bottom: 1rem; font-size: .9rem;
+}
+.conflict-box p { margin: 0 0 .35rem; color: #92400e; }
+.conflict-box ul { margin: 0; padding-left: 1.2rem; }
+.conflict-box .link {
+  background: none; border: none; padding: 0; color: #2563eb;
+  cursor: pointer; text-align: left; font: inherit;
+}
+.conflict-box .link:hover { text-decoration: underline; }
 dl { display: grid; grid-template-columns: 4rem 1fr; gap: .35rem .75rem; margin: 0 0 1rem; }
 dt { color: #555; font-size: .9rem; }
 dd { margin: 0; }

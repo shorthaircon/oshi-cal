@@ -61,7 +61,7 @@ function countdownLabel(ev) {
       還沒有推し。<router-link to="/idols">先去新增</router-link>。
     </p>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" />
+    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
     <div v-for="g in groups" :key="g.idol.id" class="group">
       <header class="g-head" :style="{ background: g.idol.color, color: readableTextOn(g.idol.color) }">
@@ -82,6 +82,7 @@ function countdownLabel(ev) {
           <div class="line1">
             <span class="time">{{ formatJst(ev.startAt) }}</span>
             <strong class="title">{{ ev.title }}</strong>
+            <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
           </div>
           <div class="meta">
             <span v-if="ev.venue">📍 {{ ev.venue }}</span>
@@ -105,6 +106,7 @@ function countdownLabel(ev) {
             <div class="line1">
               <span class="time">{{ formatJst(ev.startAt) }}</span>
               <strong class="title">{{ ev.title }}</strong>
+            <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
               <span class="past-tag">已過</span>
             </div>
             <div class="meta">

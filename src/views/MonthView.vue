@@ -88,7 +88,7 @@ const liveSelected = computed(() =>
       </div>
     </div>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" />
+    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
     <p v-if="eventsStore.events.length === 0" class="empty">
       還沒有任何活動。<router-link to="/events">先去新增第一場</router-link>。

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
+import { useEventsStore } from '../stores/events.js'
 import { formatJstTime } from '../lib/time.js'
 import { readableTextOn } from '../lib/colors.js'
 
@@ -11,6 +12,8 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const idolsStore = useIdolsStore()
+const eventsStore = useEventsStore()
+const hasConflict = computed(() => (eventsStore.conflictMap.get(props.event.id)?.length ?? 0) > 0)
 
 const idols = computed(() =>
   props.event.idolIds
@@ -49,6 +52,7 @@ const isPast = computed(() => {
     <div class="card-inner">
       <span v-if="!compact" class="time">{{ formatJstTime(event.startAt) }}</span>
       <span class="title">{{ event.title }}</span>
+      <span v-if="hasConflict" class="conflict" title="時間衝突">⚠️</span>
       <span v-if="idols.length > 1" class="idol-chips">
         <span v-for="i in idols" :key="i.id" class="chip">{{ i.name }}</span>
       </span>
@@ -84,4 +88,5 @@ const isPast = computed(() => {
   background: rgba(0,0,0,0.4); padding: 0 .3rem; border-radius: 3px;
   font-size: .65rem;
 }
+.conflict { font-size: .7rem; line-height: 1; }
 </style>

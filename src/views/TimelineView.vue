@@ -70,7 +70,7 @@ function formatDay(key) {
       <template v-else>沒有任何活動。</template>
     </p>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" />
+    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
     <div v-for="[key, list] in grouped" :key="key" class="day">
       <div class="day-head" :class="{ past: isPastKey(key), today: key === todayKey }">
@@ -83,6 +83,7 @@ function formatDay(key) {
           <div class="line1">
             <span class="time">{{ formatJst(ev.startAt).split(' ')[1] }}</span>
             <strong class="title">{{ ev.title }}</strong>
+            <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
             <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">

@@ -108,7 +108,7 @@ function idolsOf(ev) {
       />
     </div>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" />
+    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
   </section>
 </template>
 
