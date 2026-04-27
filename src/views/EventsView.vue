@@ -4,16 +4,17 @@ import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import EventForm from '../components/EventForm.vue'
 import ImportEventPanel from '../components/ImportEventPanel.vue'
+import EventDetailModal from '../components/EventDetailModal.vue'
+import IdolChip from '../components/IdolChip.vue'
 import { formatJst } from '../lib/time.js'
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
-const mode = ref('list') // 'list' | 'add' | 'edit' | 'import'
-const editingId = ref(null)
+const mode = ref('list') // 'list' | 'add' | 'import'
 const fallbackInitial = ref(null)
-
-const editing = computed(() =>
-  editingId.value ? eventsStore.byId(editingId.value) : null
+const selected = ref(null)
+const liveSelected = computed(() =>
+  selected.value ? eventsStore.byId(selected.value.id) : null
 )
 
 const sorted = computed(() =>
@@ -24,10 +25,9 @@ const sorted = computed(() =>
   })
 )
 
-function startAdd() { editingId.value = null; fallbackInitial.value = null; mode.value = 'add' }
-function startEdit(id) { editingId.value = id; mode.value = 'edit' }
+function startAdd() { fallbackInitial.value = null; mode.value = 'add' }
 function startImport() { mode.value = 'import' }
-function cancel() { mode.value = 'list'; editingId.value = null; fallbackInitial.value = null }
+function cancel() { mode.value = 'list'; fallbackInitial.value = null }
 function onImportFallback({ partial, reason }) {
   alert(`自動解析失敗：${reason}\n已開啟手動表單，部分欄位已預填。`)
   fallbackInitial.value = {
@@ -43,11 +43,7 @@ function onImportFallback({ partial, reason }) {
 }
 function onSubmit(payload) {
   if (mode.value === 'add') eventsStore.add(payload)
-  else if (mode.value === 'edit' && editingId.value) eventsStore.update(editingId.value, payload)
   cancel()
-}
-function onDelete(ev) {
-  if (confirm(`確定刪除「${ev.title}」？`)) eventsStore.remove(ev.id)
 }
 const fmt = formatJst
 function statusLabel(v) {
@@ -82,7 +78,7 @@ function idolsOf(ev) {
         還沒有任何活動，按右上「+ 新增」開始。
       </p>
       <ul v-else class="list">
-        <li v-for="ev in sorted" :key="ev.id" class="item">
+        <li v-for="ev in sorted" :key="ev.id" class="item" @click="selected = ev">
           <div class="line1">
             <strong>{{ ev.title }}</strong>
             <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
@@ -92,31 +88,27 @@ function idolsOf(ev) {
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">
-            <span v-for="i in idolsOf(ev)" :key="i.id" class="chip" :style="{ background: i.color }">
-              {{ i.name }}
-            </span>
+            <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
           </div>
           <div v-if="ev.ticketPrice != null || ev.ticketUrl" class="meta">
             <span v-if="ev.ticketPrice != null">¥{{ ev.ticketPrice.toLocaleString() }}</span>
             <a v-if="ev.ticketUrl" :href="ev.ticketUrl" target="_blank" rel="noopener">購票</a>
           </div>
           <p v-if="ev.notes" class="notes">{{ ev.notes }}</p>
-          <div class="actions">
-            <button class="ghost" @click="startEdit(ev.id)">編輯</button>
-            <button class="danger" @click="onDelete(ev)">刪除</button>
-          </div>
         </li>
       </ul>
     </div>
 
-    <div v-else-if="mode === 'add' || mode === 'edit'" class="form-wrap">
-      <h3>{{ mode === 'add' ? '新增活動' : '編輯活動' }}</h3>
+    <div v-else-if="mode === 'add'" class="form-wrap">
+      <h3>新增活動</h3>
       <EventForm
-        :initial="editing ?? fallbackInitial"
+        :initial="fallbackInitial"
         @submit="onSubmit"
         @cancel="cancel"
       />
     </div>
+
+    <EventDetailModal :event="liveSelected" @close="selected = null" />
   </section>
 </template>
 
@@ -138,7 +130,9 @@ function idolsOf(ev) {
 .item {
   padding: .75rem; background: #fafafa; border: 1px solid #eee; border-radius: 8px;
   display: flex; flex-direction: column; gap: .35rem;
+  cursor: pointer;
 }
+.item:hover { background: #f3f4f6; }
 .line1 { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 .line2 { display: flex; flex-wrap: wrap; gap: .75rem; font-size: .85rem; color: #555; }
 .tz { font-size: .7rem; color: #999; }

@@ -4,6 +4,7 @@ import { useEventsStore } from '../stores/events.js'
 import { buildMonthGrid, shiftMonth, WEEK_LABELS_ZH } from '../lib/calendar.js'
 import { jstDateKey, jstTodayKey } from '../lib/time.js'
 import EventCard from '../components/EventCard.vue'
+import EventDetailModal from '../components/EventDetailModal.vue'
 
 const eventsStore = useEventsStore()
 
@@ -38,6 +39,11 @@ function goToday() {
 }
 
 const monthLabel = computed(() => `${cursor.value.year}年${cursor.value.month}月`)
+
+const selected = ref(null)
+const liveSelected = computed(() =>
+  selected.value ? eventsStore.byId(selected.value.id) : null
+)
 </script>
 
 <template>
@@ -76,10 +82,13 @@ const monthLabel = computed(() => `${cursor.value.year}年${cursor.value.month}�
             :key="ev.id"
             :event="ev"
             :compact="true"
+            @select="selected = $event"
           />
         </div>
       </div>
     </div>
+
+    <EventDetailModal :event="liveSelected" @close="selected = null" />
 
     <p v-if="eventsStore.events.length === 0" class="empty">
       還沒有任何活動。<router-link to="/events">先去新增第一場</router-link>。

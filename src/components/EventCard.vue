@@ -2,11 +2,13 @@
 import { computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { formatJstTime } from '../lib/time.js'
+import { readableTextOn } from '../lib/colors.js'
 
 const props = defineProps({
   event: { type: Object, required: true },
   compact: { type: Boolean, default: false },
 })
+const emit = defineEmits(['select'])
 
 const idolsStore = useIdolsStore()
 
@@ -19,11 +21,21 @@ const idols = computed(() =>
 // Multi-idol → zebra stripes; single → solid; none → neutral.
 const bgStyle = computed(() => {
   const colors = idols.value.map(i => i.color)
-  if (colors.length === 0) return { background: '#9ca3af' }
-  if (colors.length === 1) return { background: colors[0] }
+  if (colors.length === 0) return { background: '#9ca3af', color: '#fff' }
+  if (colors.length === 1) {
+    return { background: colors[0], color: readableTextOn(colors[0]) }
+  }
   const step = 100 / colors.length
   const stops = colors.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')
-  return { background: `linear-gradient(135deg, ${stops})` }
+  // For multi-idol: pick text color based on average luminance
+  const avgYiq = colors.reduce((sum, c) => {
+    const n = parseInt(c.slice(1), 16)
+    return sum + (((n >> 16) & 0xff) * 299 + ((n >> 8) & 0xff) * 587 + (n & 0xff) * 114) / 1000
+  }, 0) / colors.length
+  return {
+    background: `linear-gradient(135deg, ${stops})`,
+    color: avgYiq >= 160 ? '#111' : '#fff',
+  }
 })
 
 const isPast = computed(() => {
@@ -33,7 +45,7 @@ const isPast = computed(() => {
 </script>
 
 <template>
-  <div class="card" :class="{ past: isPast, compact }" :style="bgStyle">
+  <div class="card" :class="{ past: isPast, compact }" :style="bgStyle" @click="emit('select', event)">
     <div class="card-inner">
       <span v-if="!compact" class="time">{{ formatJstTime(event.startAt) }}</span>
       <span class="title">{{ event.title }}</span>
@@ -47,10 +59,10 @@ const isPast = computed(() => {
 
 <style scoped>
 .card {
-  border-radius: 4px; color: #fff;
+  border-radius: 4px;
   font-size: .75rem; line-height: 1.3;
-  overflow: hidden; cursor: default;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  overflow: hidden; cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.08);
 }
 .card.past { opacity: .55; }
 .card-inner {

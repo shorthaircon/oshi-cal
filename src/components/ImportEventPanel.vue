@@ -283,7 +283,7 @@ dd { margin: 0; }
   padding: .4rem .6rem; cursor: pointer; font-size: .9rem;
 }
 .sel label:hover { background: #f9fafb; }
-.dot { width: 1rem; height: 1rem; border-radius: 50%; flex-shrink: 0; }
+.dot { width: 1rem; height: 1rem; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); }
 .dot.placeholder { background: repeating-linear-gradient(45deg, #e5e7eb 0 4px, #f3f4f6 4px 8px); }
 .name { flex: 1; }
 .tag { font-size: .7rem; padding: .1rem .4rem; border-radius: 999px; background: #e5e7eb; color: #374151; }

@@ -91,7 +91,7 @@ function onDelete(idol) {
   padding: .6rem .75rem; background: #fafafa;
   border: 1px solid #eee; border-radius: 8px;
 }
-.dot { width: 1.4rem; height: 1.4rem; border-radius: 50%; flex-shrink: 0; }
+.dot { width: 1.4rem; height: 1.4rem; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); }
 .name { flex: 1; font-weight: 500; }
 .hex { font-family: monospace; font-size: .8rem; color: #888; }
 .item button {

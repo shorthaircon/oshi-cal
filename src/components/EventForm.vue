@@ -1,8 +1,9 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { STATUSES } from '../stores/events.js'
 import { isoToJstLocalInput, jstLocalInputToIso } from '../lib/time.js'
+import TimePickerClock from './TimePickerClock.vue'
 
 const props = defineProps({
   initial: { type: Object, default: null },
@@ -13,8 +14,10 @@ const idolsStore = useIdolsStore()
 
 const title = ref('')
 const idolIds = ref([])
-const startAt = ref('')
+const startDate = ref('') // 'YYYY-MM-DD' (JST)
+const startTime = ref('') // 'HH:mm' (24h JST)
 const venue = ref('')
+const clockOpen = ref(false)
 const status = ref('going')
 const ticketPrice = ref('')
 const ticketUrl = ref('')
@@ -23,22 +26,39 @@ const notes = ref('')
 function loadFromInitial(v) {
   title.value = v?.title ?? ''
   idolIds.value = [...(v?.idolIds ?? [])]
-  startAt.value = v?.startAt ? isoToJstLocalInput(v.startAt) : ''
+  if (v?.startAt) {
+    const local = isoToJstLocalInput(v.startAt) // 'YYYY-MM-DDTHH:mm'
+    const [d, t] = local.split('T')
+    startDate.value = d
+    startTime.value = t || '19:00'
+  } else {
+    startDate.value = ''
+    startTime.value = '19:00'
+  }
   venue.value = v?.venue ?? ''
   status.value = v?.status ?? 'going'
   ticketPrice.value = v?.ticketPrice != null ? String(v.ticketPrice) : ''
   ticketUrl.value = v?.ticketUrl ?? ''
   notes.value = v?.notes ?? ''
 }
+
+const ampmDisplay = computed(() => {
+  if (!startTime.value) return ''
+  const [h, m] = startTime.value.split(':').map(Number)
+  const ampm = h >= 12 ? '下午' : '上午'
+  let h12 = h % 12
+  if (h12 === 0) h12 = 12
+  return `${ampm} ${h12}:${String(m).padStart(2, '0')}`
+})
 loadFromInitial(props.initial)
 watch(() => props.initial, loadFromInitial)
 
 function submit() {
-  if (!title.value.trim() || !startAt.value) return
+  if (!title.value.trim() || !startDate.value || !startTime.value) return
   emit('submit', {
     title: title.value.trim(),
     idolIds: idolIds.value,
-    startAt: jstLocalInputToIso(startAt.value),
+    startAt: jstLocalInputToIso(`${startDate.value}T${startTime.value}`),
     endAt: null,
     venue: venue.value.trim(),
     status: status.value,
@@ -70,10 +90,18 @@ function submit() {
       </div>
     </div>
 
-    <label class="row">
-      <span>開始時間 <em>*</em>（日本時間 JST）</span>
-      <input v-model="startAt" type="datetime-local" required />
-    </label>
+    <div class="grid2">
+      <label class="row">
+        <span>日期 <em>*</em>（JST）</span>
+        <input v-model="startDate" type="date" required />
+      </label>
+      <div class="row">
+        <span>時間 <em>*</em>（JST）</span>
+        <button type="button" class="time-btn" @click="clockOpen = true">
+          {{ ampmDisplay || '選擇時間' }}
+        </button>
+      </div>
+    </div>
 
     <label class="row">
       <span>地點</span>
@@ -105,10 +133,16 @@ function submit() {
 
     <div class="actions">
       <button type="button" class="ghost" @click="emit('cancel')">取消</button>
-      <button type="submit" :disabled="!title.trim() || !startAt">
+      <button type="submit" :disabled="!title.trim() || !startDate || !startTime">
         {{ initial ? '儲存' : '新增' }}
       </button>
     </div>
+
+    <TimePickerClock
+      v-model="startTime"
+      :open="clockOpen"
+      @close="clockOpen = false"
+    />
   </form>
 </template>
 
@@ -121,6 +155,12 @@ function submit() {
   padding: .5rem .6rem; border: 1px solid #ccc; border-radius: 6px;
   font-size: 1rem; font-family: inherit;
 }
+.time-btn {
+  padding: .5rem .8rem; border: 1px solid #ccc; border-radius: 6px;
+  background: #fff; color: #111; cursor: pointer; font-size: 1rem;
+  text-align: left;
+}
+.time-btn:hover { background: #f5f5f5; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
 .idol-checks { display: flex; flex-wrap: wrap; gap: .5rem; }
@@ -130,7 +170,7 @@ function submit() {
   cursor: pointer; font-size: .9rem;
 }
 .chk input { margin: 0; }
-.dot { width: .9rem; height: .9rem; border-radius: 50%; }
+.dot { width: .9rem; height: .9rem; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); }
 .hint { font-size: .9rem; color: #888; }
 .actions { display: flex; gap: .5rem; justify-content: flex-end; }
 .actions button {

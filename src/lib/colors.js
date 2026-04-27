@@ -23,6 +23,19 @@ export function recommendNext(usedHexes) {
   return (available[0] ?? PALETTE[0]).hex
 }
 
+// Pick black or white text for best contrast against given hex bg.
+// Uses YIQ luminance — fast and good enough for UI.
+export function readableTextOn(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex ?? '')
+  if (!m) return '#fff'
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 0xff
+  const g = (n >> 8) & 0xff
+  const b = n & 0xff
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 160 ? '#111' : '#fff'
+}
+
 export function isClash(hex, otherHexes) {
   const target = hex?.toLowerCase()
   return (otherHexes ?? []).some(h => h?.toLowerCase() === target)

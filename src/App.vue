@@ -23,6 +23,7 @@ const showDot = computed(() => needsBackup({
       <router-link to="/" class="brand">oshi-cal</router-link>
       <nav>
         <router-link to="/">月曆</router-link>
+        <router-link to="/timeline">時間軸</router-link>
         <router-link to="/events">活動</router-link>
         <router-link to="/idols">偶像</router-link>
         <router-link to="/settings" class="settings-link">
@@ -44,7 +45,7 @@ const showDot = computed(() => needsBackup({
   padding: .75rem 1rem; border-bottom: 1px solid #eee;
 }
 .brand { font-weight: 700; font-size: 1.1rem; text-decoration: none; color: #111; }
-nav { display: flex; gap: 1rem; }
+nav { display: flex; gap: .85rem; flex-wrap: wrap; font-size: .9rem; }
 nav a { text-decoration: none; color: #666; }
 nav a.router-link-active { color: #111; font-weight: 600; }
 .settings-link { position: relative; }
