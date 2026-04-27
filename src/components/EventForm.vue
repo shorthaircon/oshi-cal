@@ -2,7 +2,8 @@
 import { ref, watch, computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { STATUSES } from '../stores/events.js'
-import { isoToJstLocalInput, jstLocalInputToIso } from '../lib/time.js'
+import { isoToLocalInputInTz, localInputToIsoInTz } from '../lib/time.js'
+import { TZ_OPTIONS, DEFAULT_TZ, detectTimezone } from '../lib/timezones.js'
 import TimePickerClock from './TimePickerClock.vue'
 
 const props = defineProps({
@@ -17,6 +18,7 @@ const idolIds = ref([])
 const startDate = ref('') // 'YYYY-MM-DD' (JST)
 const startTime = ref('') // 'HH:mm' (24h JST)
 const venue = ref('')
+const timezone = ref(DEFAULT_TZ)
 const clockOpen = ref(false)
 const status = ref('going')
 const ticketPrice = ref('')
@@ -26,8 +28,9 @@ const notes = ref('')
 function loadFromInitial(v) {
   title.value = v?.title ?? ''
   idolIds.value = [...(v?.idolIds ?? [])]
+  timezone.value = v?.timezone ?? DEFAULT_TZ
   if (v?.startAt) {
-    const local = isoToJstLocalInput(v.startAt) // 'YYYY-MM-DDTHH:mm'
+    const local = isoToLocalInputInTz(v.startAt, timezone.value)
     const [d, t] = local.split('T')
     startDate.value = d
     startTime.value = t || '19:00'
@@ -41,6 +44,13 @@ function loadFromInitial(v) {
   ticketUrl.value = v?.ticketUrl ?? ''
   notes.value = v?.notes ?? ''
 }
+
+// Auto-suggest timezone when venue changes (only on add, not edit)
+watch(venue, (v) => {
+  if (props.initial?.timezone) return // user already had a tz; don't override
+  const detected = detectTimezone(v)
+  if (detected !== timezone.value) timezone.value = detected
+})
 
 const ampmDisplay = computed(() => {
   if (!startTime.value) return ''
@@ -58,7 +68,8 @@ function submit() {
   emit('submit', {
     title: title.value.trim(),
     idolIds: idolIds.value,
-    startAt: jstLocalInputToIso(`${startDate.value}T${startTime.value}`),
+    timezone: timezone.value,
+    startAt: localInputToIsoInTz(`${startDate.value}T${startTime.value}`, timezone.value),
     endAt: null,
     venue: venue.value.trim(),
     status: status.value,
@@ -90,13 +101,22 @@ function submit() {
       </div>
     </div>
 
+    <label class="row">
+      <span>時區</span>
+      <select v-model="timezone">
+        <option v-for="tz in TZ_OPTIONS" :key="tz.id" :value="tz.id">
+          {{ tz.label }}（{{ tz.code }}）
+        </option>
+      </select>
+    </label>
+
     <div class="grid2">
       <label class="row">
-        <span>日期 <em>*</em>（JST）</span>
+        <span>日期 <em>*</em></span>
         <input v-model="startDate" type="date" required />
       </label>
       <div class="row">
-        <span>時間 <em>*</em>（JST）</span>
+        <span>時間 <em>*</em></span>
         <button type="button" class="time-btn" @click="clockOpen = true">
           {{ ampmDisplay || '選擇時間' }}
         </button>

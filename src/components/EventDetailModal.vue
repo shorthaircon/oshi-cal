@@ -2,9 +2,11 @@
 import { ref, computed, watch } from 'vue'
 import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
-import { formatJst } from '../lib/time.js'
+import { formatInTz } from '../lib/time.js'
+import { tzCodeOf } from '../lib/timezones.js'
 import EventForm from './EventForm.vue'
 import IdolChip from './IdolChip.vue'
+import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
 
 const props = defineProps({
   event: { type: Object, default: null },
@@ -46,6 +48,13 @@ function onSubmit(payload) {
   editing.value = false
   emit('close')
 }
+function exportIcs() {
+  if (!props.event) return
+  const result = serializeIcs([props.event])
+  if (!result.ok) return alert(`匯出失敗：${result.reason}`)
+  const safeTitle = props.event.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 60)
+  downloadIcs(`oshi-cal-${safeTitle}.ics`, result.ics)
+}
 function onDelete() {
   if (!props.event) return
   if (confirm(`確定刪除「${props.event.title}」？`)) {
@@ -73,15 +82,15 @@ function onDelete() {
             <ul>
               <li v-for="c in conflicts" :key="c.id">
                 <button type="button" class="link" @click="jumpTo(c)">
-                  {{ formatJst(c.startAt) }} · {{ c.title }}
+                  {{ formatInTz(c.startAt, c.timezone) }} {{ tzCodeOf(c.timezone) }} · {{ c.title }}
                 </button>
               </li>
             </ul>
           </div>
 
           <dl>
-            <dt>開始</dt><dd>{{ formatJst(event.startAt) }} <span class="muted">JST</span></dd>
-            <dt v-if="event.endAt">結束</dt><dd v-if="event.endAt">{{ formatJst(event.endAt) }} <span class="muted">JST</span></dd>
+            <dt>開始</dt><dd>{{ formatInTz(event.startAt, event.timezone) }} <span class="muted">{{ tzCodeOf(event.timezone) }}</span></dd>
+            <dt v-if="event.endAt">結束</dt><dd v-if="event.endAt">{{ formatInTz(event.endAt, event.timezone) }} <span class="muted">{{ tzCodeOf(event.timezone) }}</span></dd>
             <dt>地點</dt><dd>{{ event.venue || '—' }}</dd>
             <dt>狀態</dt><dd>{{ statusLabel }}</dd>
             <dt>推し</dt>
@@ -104,6 +113,7 @@ function onDelete() {
           </dl>
           <div class="actions">
             <button @click="startEdit">編輯</button>
+            <button class="ghost" @click="exportIcs">匯出 iCal</button>
             <button class="danger" @click="onDelete">刪除</button>
             <button class="ghost" @click="close">關閉</button>
           </div>

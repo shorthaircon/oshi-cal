@@ -1,5 +1,5 @@
 const KEY = 'oshi-cal:data'
-const CURRENT_VERSION = 1
+const CURRENT_VERSION = 2
 
 const EMPTY = {
   version: CURRENT_VERSION,
@@ -48,10 +48,23 @@ export { CURRENT_VERSION }
 
 function migrate(data) {
   if (!data || typeof data !== 'object') return { ...EMPTY }
-  const v = data.version ?? 0
-  if (v === CURRENT_VERSION) return normalize(data)
-  // future migrations: if (v < 2) data = migrateTo2(data)
+  let v = data.version ?? 0
+  if (v < 2) {
+    data = migrateTo2(data)
+    v = 2
+  }
   return normalize({ ...data, version: CURRENT_VERSION })
+}
+
+// v1 → v2: every event gets timezone (default Asia/Tokyo).
+function migrateTo2(data) {
+  return {
+    ...data,
+    events: (data.events ?? []).map(ev => ({
+      ...ev,
+      timezone: ev.timezone ?? 'Asia/Tokyo',
+    })),
+  }
 }
 
 function normalize(data) {

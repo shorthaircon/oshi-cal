@@ -5,7 +5,8 @@ import { classifyEventernoteUrl } from '../lib/eventernoteUrl.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
 import { recommendNext } from '../lib/colors.js'
-import { formatJst } from '../lib/time.js'
+import { formatInTz } from '../lib/time.js'
+import { tzCodeOf } from '../lib/timezones.js'
 
 const PROXY = import.meta.env.VITE_PROXY_URL || ''
 
@@ -116,6 +117,7 @@ function confirmImport() {
     endAt: parsed.value.endAt,
     venue: parsed.value.venue ?? '',
     sourceUrl: parsed.value.sourceUrl,
+    timezone: parsed.value.timezone,
     idolIds: resolveIdolIds(selections.value),
     status: 'going',
   })
@@ -131,6 +133,7 @@ function confirmBatchImport() {
       endAt: item.event.endAt,
       venue: item.event.venue ?? '',
       sourceUrl: item.event.sourceUrl,
+      timezone: item.event.timezone,
       idolIds: resolveIdolIds(item.idolSelections),
       status: 'going',
     })
@@ -138,8 +141,8 @@ function confirmBatchImport() {
   emit('done')
 }
 
-function fmt(iso) {
-  return iso ? formatJst(iso) : '—'
+function fmt(iso, tz) {
+  return iso ? formatInTz(iso, tz) : '—'
 }
 </script>
 
@@ -178,7 +181,7 @@ function fmt(iso) {
             <div class="batch-meta">
               <div class="batch-title">{{ item.event.title }}</div>
               <div class="batch-sub">
-                {{ fmt(item.event.startAt) }} JST
+                {{ fmt(item.event.startAt, item.event.timezone) }} {{ tzCodeOf(item.event.timezone) }}
                 <span v-if="item.event.venue"> · {{ item.event.venue }}</span>
               </div>
             </div>
@@ -214,8 +217,8 @@ function fmt(iso) {
       </p>
       <dl>
         <dt>標題</dt><dd>{{ parsed.title }}</dd>
-        <dt>開始</dt><dd>{{ fmt(parsed.startAt) }} <span class="muted">JST</span></dd>
-        <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt) : '（未提供）' }}</dd>
+        <dt>開始</dt><dd>{{ fmt(parsed.startAt, parsed.timezone) }} <span class="muted">{{ tzCodeOf(parsed.timezone) }}</span></dd>
+        <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt, parsed.timezone) : '（未提供）' }}</dd>
         <dt>地點</dt><dd>{{ parsed.venue || '（未提供）' }}</dd>
         <dt>推し</dt>
         <dd>

@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
-import { formatJstTime } from '../lib/time.js'
+import { formatTimeInTz } from '../lib/time.js'
+import { tzCodeOf, DEFAULT_TZ } from '../lib/timezones.js'
 import { readableTextOn } from '../lib/colors.js'
 
 const props = defineProps({
@@ -50,7 +51,7 @@ const isPast = computed(() => {
 <template>
   <div class="card" :class="{ past: isPast, compact }" :style="bgStyle" @click="emit('select', event)">
     <div class="card-inner">
-      <span v-if="!compact" class="time">{{ formatJstTime(event.startAt) }}</span>
+      <span v-if="!compact" class="time">{{ formatTimeInTz(event.startAt, event.timezone) }}</span>
       <span class="title">{{ event.title }}</span>
       <span v-if="hasConflict" class="conflict" title="時間衝突">⚠️</span>
       <span v-if="idols.length > 1" class="idol-chips">

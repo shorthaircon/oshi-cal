@@ -6,7 +6,8 @@ import EventForm from '../components/EventForm.vue'
 import ImportEventPanel from '../components/ImportEventPanel.vue'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
-import { formatJst } from '../lib/time.js'
+import { formatInTz } from '../lib/time.js'
+import { tzCodeOf } from '../lib/timezones.js'
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
@@ -45,7 +46,7 @@ function onSubmit(payload) {
   if (mode.value === 'add') eventsStore.add(payload)
   cancel()
 }
-const fmt = formatJst
+const fmt = formatInTz
 function statusLabel(v) {
   return STATUSES.find(s => s.value === v)?.label ?? v
 }
@@ -84,7 +85,7 @@ function idolsOf(ev) {
             <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
           </div>
           <div class="line2">
-            <span class="time">🕐 {{ fmt(ev.startAt) }}{{ ev.endAt ? ` ~ ${fmt(ev.endAt)}` : '' }} <span class="tz">JST</span></span>
+            <span class="time">🕐 {{ fmt(ev.startAt, ev.timezone) }}{{ ev.endAt ? ` ~ ${fmt(ev.endAt, ev.timezone)}` : '' }} <span class="tz">{{ tzCodeOf(ev.timezone) }}</span></span>
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">

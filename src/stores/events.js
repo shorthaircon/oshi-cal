@@ -24,6 +24,7 @@ function emptyEvent() {
     ticketUrl: '',
     notes: '',
     reminder: null,
+    timezone: 'Asia/Tokyo',
   }
 }
 

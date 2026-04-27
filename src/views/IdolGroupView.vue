@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import { useEventsStore } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
-import { formatJst, jstDateKey, jstTodayKey } from '../lib/time.js'
+import { formatInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
+import { tzCodeOf } from '../lib/timezones.js'
 import { readableTextOn } from '../lib/colors.js'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
@@ -10,7 +11,7 @@ import IdolChip from '../components/IdolChip.vue'
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 
-const todayKey = jstTodayKey()
+const todayKey = deviceTodayKey()
 const showPast = ref({}) // { [idolId]: bool }
 const selected = ref(null)
 
@@ -23,8 +24,9 @@ const groups = computed(() => {
     const all = eventsStore.events
       .filter(ev => ev.idolIds.includes(idol.id))
       .sort((a, b) => (a.startAt ?? '').localeCompare(b.startAt ?? ''))
-    const future = all.filter(ev => jstDateKey(ev.startAt) >= todayKey)
-    const past = all.filter(ev => jstDateKey(ev.startAt) < todayKey)
+    const now = Date.now()
+    const future = all.filter(ev => ev.startAt && new Date(ev.startAt).getTime() >= now)
+    const past = all.filter(ev => ev.startAt && new Date(ev.startAt).getTime() < now)
     const next = future[0] ?? null
     return { idol, all, future, past, next }
   })
@@ -36,12 +38,8 @@ function toggle(idolId) {
 
 function daysUntil(iso) {
   if (!iso) return null
-  const evKey = jstDateKey(iso)
-  const [ey, em, ed] = evKey.split('-').map(Number)
-  const [ty, tm, td] = todayKey.split('-').map(Number)
-  const e = Date.UTC(ey, em - 1, ed)
-  const t = Date.UTC(ty, tm - 1, td)
-  return Math.round((e - t) / (24 * 60 * 60 * 1000))
+  const ms = new Date(iso).getTime() - Date.now()
+  return Math.ceil(ms / (24 * 60 * 60 * 1000))
 }
 
 function countdownLabel(ev) {
@@ -80,7 +78,7 @@ function countdownLabel(ev) {
           @click="selected = ev"
         >
           <div class="line1">
-            <span class="time">{{ formatJst(ev.startAt) }}</span>
+            <span class="time">{{ formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
             <strong class="title">{{ ev.title }}</strong>
             <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
           </div>
@@ -104,7 +102,7 @@ function countdownLabel(ev) {
             @click="selected = ev"
           >
             <div class="line1">
-              <span class="time">{{ formatJst(ev.startAt) }}</span>
+              <span class="time">{{ formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
               <strong class="title">{{ ev.title }}</strong>
             <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
               <span class="past-tag">已過</span>
@@ -157,6 +155,7 @@ function countdownLabel(ev) {
 .card.past { opacity: .65; }
 .line1 { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
 .time { font-family: monospace; font-size: .8rem; color: #666; }
+.tzc { font-size: .65rem; color: #aaa; }
 .title { flex: 1; font-size: .9rem; }
 .past-tag { font-size: .7rem; padding: .1rem .4rem; border-radius: 999px; background: #f3f4f6; color: #888; }
 .meta { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .75rem; color: #666; margin-top: .15rem; }

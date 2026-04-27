@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
-import { formatJst, jstDateKey, jstTodayKey } from '../lib/time.js'
+import { formatInTz, formatTimeInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
+import { tzCodeOf, DEFAULT_TZ } from '../lib/timezones.js'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
 
@@ -11,13 +12,12 @@ const idolsStore = useIdolsStore()
 
 const showPast = ref(false)
 
-const todayKey = jstTodayKey()
+const todayKey = deviceTodayKey()
 
 const sorted = computed(() => {
   const list = eventsStore.events.filter(ev => {
-    const k = jstDateKey(ev.startAt)
-    if (!k) return false
-    return showPast.value || k >= todayKey
+    if (!ev.startAt) return false
+    return showPast.value || new Date(ev.startAt).getTime() >= Date.now()
   })
   return list.sort((a, b) => (a.startAt ?? '').localeCompare(b.startAt ?? ''))
 })
@@ -25,11 +25,11 @@ const sorted = computed(() => {
 const grouped = computed(() => {
   const map = new Map()
   for (const ev of sorted.value) {
-    const k = jstDateKey(ev.startAt)
+    const k = dateKeyInTz(ev.startAt, ev.timezone)
     if (!map.has(k)) map.set(k, [])
     map.get(k).push(ev)
   }
-  return Array.from(map.entries()) // [[key, events], ...]
+  return Array.from(map.entries())
 })
 
 function idolsOf(ev) {
@@ -81,7 +81,7 @@ function formatDay(key) {
       <ul class="list">
         <li v-for="ev in list" :key="ev.id" class="card" @click="selected = ev">
           <div class="line1">
-            <span class="time">{{ formatJst(ev.startAt).split(' ')[1] }}</span>
+            <span class="time">{{ formatTimeInTz(ev.startAt, ev.timezone) }} <span class="tz">{{ tzCodeOf(ev.timezone) }}</span></span>
             <strong class="title">{{ ev.title }}</strong>
             <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
             <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
@@ -122,6 +122,7 @@ function formatDay(key) {
 .card:hover { background: #f3f4f6; }
 .line1 { display: flex; align-items: center; gap: .5rem; margin-bottom: .25rem; }
 .time { font-family: monospace; font-size: .85rem; color: #444; min-width: 3.5rem; }
+.tz { font-size: .65rem; color: #999; }
 .title { flex: 1; font-size: .95rem; }
 .status { font-size: .7rem; padding: .1rem .5rem; border-radius: 999px; background: #e5e7eb; color: #374151; }
 .status[data-s="ticketed"] { background: #dbeafe; color: #1e40af; }

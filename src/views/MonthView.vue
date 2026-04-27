@@ -2,13 +2,13 @@
 import { ref, computed } from 'vue'
 import { useEventsStore } from '../stores/events.js'
 import { buildMonthGrid, shiftMonth, WEEK_LABELS_ZH } from '../lib/calendar.js'
-import { jstDateKey, jstTodayKey } from '../lib/time.js'
+import { dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import EventCard from '../components/EventCard.vue'
 import EventDetailModal from '../components/EventDetailModal.vue'
 
 const eventsStore = useEventsStore()
 
-const todayKey = jstTodayKey()
+const todayKey = deviceTodayKey()
 const todayParts = todayKey.split('-').map(Number)
 const cursor = ref({ year: todayParts[0], month: todayParts[1] })
 
@@ -17,7 +17,7 @@ const cells = computed(() => buildMonthGrid(cursor.value.year, cursor.value.mont
 const eventsByDay = computed(() => {
   const map = new Map()
   for (const ev of eventsStore.events) {
-    const key = jstDateKey(ev.startAt)
+    const key = dateKeyInTz(ev.startAt, ev.timezone)
     if (!key) continue
     if (!map.has(key)) map.set(key, [])
     map.get(key).push(ev)

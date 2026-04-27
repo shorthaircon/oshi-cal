@@ -1,6 +1,8 @@
 // Parses an Eventernote single event page HTML into a structured event.
 // Returns { ok: true, event: {...} } or { ok: false, reason, partial }.
 
+import { detectTimezone, offsetString } from './timezones.js'
+
 const ROW_KEYS = {
   '開催日時': 'date',
   '時間': 'time',
@@ -29,8 +31,9 @@ export function parseEventernoteEvent(html, sourceUrl = null) {
     ? extractActorsFromRow(rows.actors)
     : extractActorsFromOg(ogDesc)
 
-  const startAt = combineJst(dateStr, times.start)
-  const endAt = combineJst(dateStr, times.end)
+  const tz = detectTimezone(venue)
+  const startAt = combineWithTz(dateStr, times.start, tz)
+  const endAt = combineWithTz(dateStr, times.end, tz)
 
   const partial = {
     title: (title ?? '').trim() || null,
@@ -38,6 +41,7 @@ export function parseEventernoteEvent(html, sourceUrl = null) {
     endAt,
     venue: venue || null,
     sourceUrl,
+    timezone: tz,
     idolNames: idolNames.filter(Boolean),
   }
 
@@ -96,10 +100,10 @@ function normalizeTime(s) {
 
 function pad(n) { return String(n).padStart(2, '0') }
 
-function combineJst(date, time) {
+function combineWithTz(date, time, tz) {
   if (!date) return null
   const t = time ?? '00:00'
-  return `${date}T${t}:00+09:00`
+  return `${date}T${t}:00${offsetString(tz)}`
 }
 
 function extractDateFromOg(desc) {
@@ -181,12 +185,14 @@ export function parseEventernoteActorList(html) {
 
     if (!title || !date) continue
 
+    const tz = detectTimezone(venue)
     events.push({
       title,
-      startAt: combineJst(date, times.start),
-      endAt: combineJst(date, times.end),
+      startAt: combineWithTz(date, times.start, tz),
+      endAt: combineWithTz(date, times.end, tz),
       venue: venue || null,
       sourceUrl,
+      timezone: tz,
       idolNames,
     })
   }

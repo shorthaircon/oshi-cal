@@ -4,6 +4,7 @@ import { loadAll, replaceAll, markBackup, CURRENT_VERSION } from '../lib/storage
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
 import { useMetaStore } from '../stores/meta.js'
+import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
 
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
@@ -26,6 +27,21 @@ function exportJson() {
   markBackup()
   metaStore.refresh()
   message.value = `已匯出（${data.idols.length} 推し / ${data.events.length} 活動）`
+}
+
+function exportIcsAll() {
+  const events = eventsStore.events
+  if (!events.length) {
+    message.value = '沒有活動可匯出'
+    return
+  }
+  const result = serializeIcs(events)
+  if (!result.ok) {
+    message.value = `iCal 匯出失敗：${result.reason}`
+    return
+  }
+  downloadIcs(`oshi-cal-events-${stamp(new Date())}.ics`, result.ics)
+  message.value = `已匯出 ${events.length} 場活動為 iCal`
 }
 
 function pickFile() {
@@ -101,6 +117,16 @@ function stamp(d) {
           style="display:none"
           @change="onFile"
         />
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>匯出至系統行事曆</h3>
+      <p class="muted">
+        產出 .ics 檔，雙擊匯入 macOS / iOS 系統行事曆，可獲得活動提醒。
+      </p>
+      <div class="row">
+        <button @click="exportIcsAll">匯出全部活動 (.ics)</button>
       </div>
       <p v-if="message" class="msg">{{ message }}</p>
     </div>
