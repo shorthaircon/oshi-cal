@@ -50,6 +50,17 @@ export function isoToJstLocalInput(iso) {
   return `${p.y}-${pad(p.mo)}-${pad(p.da)}T${pad(p.h)}:${pad(p.mi)}`
 }
 
+// '2026-05-01' — JST date key, used to group events by day.
+export function jstDateKey(iso) {
+  const p = toJstParts(iso)
+  if (!p) return null
+  return `${p.y}-${pad(p.mo)}-${pad(p.da)}`
+}
+
+export function jstTodayKey(now = Date.now()) {
+  return jstDateKey(new Date(now).toISOString())
+}
+
 // User typed '2026-05-01T18:30' — treat as JST and produce ISO with +09:00.
 export function jstLocalInputToIso(local) {
   if (!local) return null
