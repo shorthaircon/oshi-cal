@@ -1,0 +1,234 @@
+/* oshi-cal Design System — colors & type tokens
+ * Wes Anderson "Grand Budapest" direction (selected from Phase 7 cinematic-ui).
+ * Mobile-first, 375px → ≥1024px.
+ * NEVER set Playfair on body / numbers / table cells — Inter / Noto Sans JP only.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  /* === COLORS ====================================================== */
+
+  /* Surfaces (light only — no dark mode) */
+  --bg:        #fef6f0; /* cream-pink page bg */
+  --paper:     #fdf0e6; /* card / framed surface */
+  --washi:     #f5e7d8; /* today highlight, label background */
+
+  /* Ink — deep berry-plum text */
+  --ink:       #3b1f2b;
+  --ink-soft:  #6e3a4c;
+  --ink-faint: #a07b87;
+
+  /* Accents */
+  --berry:     #e7568f; /* primary — ribbon, active, CTA hover fill */
+  --lavender:  #a78bfa; /* secondary — conflict / multi-idol second band */
+  --gold:      #c9a44a; /* tertiary — past tag, year label */
+  --mint:      #a8d8c0; /* status: attended / success */
+
+  /* Lines */
+  --line:      #e8c5b8;
+  --line-soft: #f3dcd0;
+
+  /* Today indicator (deep teal — distinct from berry / sun red) */
+  --today:     #0d9488;
+
+  /* Status semantic */
+  --status-going:     #fbcfe8; /* pink */
+  --status-going-fg:  #831843;
+  --status-ticketed:  #ddd6fe; /* lavender */
+  --status-ticketed-fg: #4c1d95;
+  --status-attended:  #d4f0e0; /* mint */
+  --status-attended-fg: #14532d;
+  --status-waitlist:  #fef0c7; /* gold */
+  --status-waitlist-fg: #78350f;
+  --status-cancelled: #fcd5d5;
+  --status-cancelled-fg: #7f1d1d;
+
+  /* 12-color oshi palette (kept from codebase) */
+  --oshi-1:  #ec4899; /* 粉 */
+  --oshi-2:  #ef4444; /* 紅 */
+  --oshi-3:  #f97316; /* 橘 */
+  --oshi-4:  #f59e0b; /* 琥珀 */
+  --oshi-5:  #eab308; /* 黃 */
+  --oshi-6:  #84cc16; /* 黃綠 */
+  --oshi-7:  #22c55e; /* 綠 */
+  --oshi-8:  #14b8a6; /* 青綠 */
+  --oshi-9:  #06b6d4; /* 青 */
+  --oshi-10: #3b82f6; /* 藍 */
+  --oshi-11: #6366f1; /* 靛 */
+  --oshi-12: #a855f7; /* 紫 */
+
+  /* === TYPE FAMILIES =============================================== */
+  --font-display: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+  --font-day:     'DM Serif Display', 'Playfair Display', Georgia, serif;
+  --font-body:    'Inter', 'Noto Sans JP', -apple-system, 'Hiragino Sans', 'Yu Gothic UI', system-ui, sans-serif;
+  --font-jp:      'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
+
+  /* Nav / button labels — boarding-pass mono. Used for top nav, month nav,
+     ribbons, ribbon-chips, eyebrows, frame buttons. NOT for big serif titles. */
+  --font-nav:     'DM Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Numerics — for time / price / dates / table cells */
+  --font-num:     'Inter', system-ui, sans-serif;
+
+  /* === TYPE SCALE (semantic) ====================================== */
+  --h1-size:      4.5rem;   /* 72  — big month name */
+  --h1-weight:    900;
+  --h1-tracking:  -0.02em;
+
+  --h2-size:      1.75rem;  /* 28 */
+  --h2-weight:    900;
+  --h2-tracking:  0.15em;   /* uppercase + tracking */
+
+  --h3-size:      1.25rem;  /* 20 */
+  --h3-weight:    700;
+
+  --eyebrow-size: 0.75rem;  /* 12 — small caps decorative line */
+  --eyebrow-tracking: 0.35em;
+
+  --nav-size:     0.8rem;   /* 13 */
+  --nav-tracking: 0.25em;
+
+  --body-size:    1rem;     /* 16 */
+  --body-leading: 1.55;
+
+  --small-size:   0.85rem;
+  --tiny-size:    0.7rem;
+
+  --line-height-tight: 1.15;
+  --line-height-snug:  1.35;
+  --line-height-base:  1.55;
+  --line-height-loose: 1.75;
+
+  /* === SPACING ===================================================== */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* === RADII ======================================================= */
+  --r-stage: 4px;   /* main framed card */
+  --r-card:  6px;   /* inner */
+  --r-input: 6px;
+  --r-pill:  999px;
+
+  /* === BORDERS ===================================================== */
+  --border-w-strong: 2px;
+  --border-w-soft:   1px;
+
+  /* === SHADOWS (signature double-shadow) =========================== */
+  --shadow-stage:    0 2px 0 var(--ink), 0 12px 24px rgba(59, 31, 43, 0.08);
+  --shadow-card:     0 1px 0 var(--ink-soft), 0 4px 12px rgba(59, 31, 43, 0.06);
+  --shadow-hover:    0 4px 12px rgba(231, 86, 143, 0.15);
+  --shadow-modal:    0 16px 48px rgba(59, 31, 43, 0.25);
+
+  /* === MOTION ====================================================== */
+  --ease:        cubic-bezier(.4, 0, .2, 1);
+  --dur-fast:    .15s;
+  --dur-base:    .2s;
+  --dur-slow:    .3s;
+}
+
+/* ===================================================================
+ * SEMANTIC TYPE STYLES — apply directly via class or compose into your CSS
+ * =================================================================== */
+
+.t-h1, h1.ds {
+  font-family: var(--font-display);
+  font-size: var(--h1-size);
+  font-weight: var(--h1-weight);
+  letter-spacing: var(--h1-tracking);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+
+.t-h2, h2.ds {
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  font-weight: var(--h2-weight);
+  letter-spacing: var(--h2-tracking);
+  line-height: var(--line-height-snug);
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--h3-size);
+  font-weight: var(--h3-weight);
+  color: var(--ink);
+  margin: 0;
+}
+
+.t-eyebrow {
+  font-family: var(--font-nav);
+  font-size: var(--eyebrow-size);
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--berry);
+  font-weight: 500;
+}
+
+.t-nav {
+  font-family: var(--font-nav);
+  font-size: var(--nav-size);
+  letter-spacing: var(--nav-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
+  color: var(--ink);
+}
+
+.t-jp {
+  font-family: var(--font-jp);
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
+  color: var(--ink);
+}
+
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--small-size);
+  color: var(--ink-soft);
+}
+
+.t-num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Mobile sizing */
+@media (max-width: 600px) {
+  :root {
+    --h1-size: 2.75rem;
+    --h2-size: 1.4rem;
+  }
+}
+
+/* ===================================================================
+ * BASE
+ * =================================================================== */
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: var(--body-leading);
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }

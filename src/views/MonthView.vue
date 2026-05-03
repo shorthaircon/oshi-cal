@@ -5,6 +5,7 @@ import { buildMonthGrid, shiftMonth, WEEK_LABELS_ZH } from '../lib/calendar.js'
 import { dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import EventCard from '../components/EventCard.vue'
 import EventDetailModal from '../components/EventDetailModal.vue'
+import Ribbon from '../components/Ribbon.vue'
 
 const eventsStore = useEventsStore()
 
@@ -38,7 +39,26 @@ function goToday() {
   cursor.value = { year: todayParts[0], month: todayParts[1] }
 }
 
-const monthLabel = computed(() => `${cursor.value.year}年${cursor.value.month}月`)
+const prevMonth = computed(() => ((cursor.value.month + 10) % 12) + 1)
+const nextMonth = computed(() => (cursor.value.month % 12) + 1)
+
+const monthEventCount = computed(() => {
+  const ym = `${cursor.value.year}-${String(cursor.value.month).padStart(2, '0')}`
+  return eventsStore.events.filter(ev => {
+    const k = dateKeyInTz(ev.startAt, ev.timezone)
+    return k && k.startsWith(ym)
+  }).length
+})
+const monthOshiCount = computed(() => {
+  const ym = `${cursor.value.year}-${String(cursor.value.month).padStart(2, '0')}`
+  const set = new Set()
+  for (const ev of eventsStore.events) {
+    const k = dateKeyInTz(ev.startAt, ev.timezone)
+    if (!k || !k.startsWith(ym)) continue
+    for (const id of ev.idolIds) set.add(id)
+  }
+  return set.size
+})
 
 const selected = ref(null)
 const liveSelected = computed(() =>
@@ -47,44 +67,49 @@ const liveSelected = computed(() =>
 </script>
 
 <template>
-  <section class="month">
-    <header class="head">
-      <h2>{{ monthLabel }}</h2>
-      <div class="nav">
-        <button @click="prev" aria-label="上個月">‹</button>
-        <button class="ghost" @click="goToday">今天</button>
-        <button @click="next" aria-label="下個月">›</button>
+  <section class="view-month">
+    <div class="month-head">
+      <Ribbon>Anno {{ cursor.year }}</Ribbon>
+      <h1 class="month-title">
+        <span class="month-num">{{ cursor.month }}</span><span class="month-suffix">月</span>
+      </h1>
+      <div class="month-frame">
+        <span>{{ String(monthEventCount).padStart(2, '0') }} 場</span>
+        <span>·</span>
+        <span>{{ monthOshiCount }} 推し</span>
       </div>
-    </header>
+      <div class="month-nav">
+        <button class="btn-frame" @click="prev">‹ {{ prevMonth }}月</button>
+        <button class="btn-frame active" @click="goToday">今天</button>
+        <button class="btn-frame" @click="next">{{ nextMonth }}月 ›</button>
+      </div>
+    </div>
 
     <div class="weekrow">
-      <div v-for="(w, i) in WEEK_LABELS_ZH" :key="i" class="weekday" :class="{ sun: i === 0, sat: i === 6 }">
+      <div v-for="(w, i) in WEEK_LABELS_ZH" :key="i" :class="{ sun: i === 0 }">
         {{ w }}
       </div>
     </div>
 
-    <div class="grid">
+    <div class="grid-month">
       <div
         v-for="cell in cells"
         :key="cell.key"
         class="cell"
         :class="{
-          'out-of-month': !cell.inMonth,
+          'out': !cell.inMonth,
           'today': cell.key === todayKey,
           'sun': cell.dow === 0,
-          'sat': cell.dow === 6,
         }"
       >
-        <div class="date-num">{{ cell.date }}</div>
-        <div class="events">
-          <EventCard
-            v-for="ev in (eventsByDay.get(cell.key) ?? [])"
-            :key="ev.id"
-            :event="ev"
-            :compact="true"
-            @select="selected = $event"
-          />
-        </div>
+        <span class="num">{{ cell.date }}</span>
+        <EventCard
+          v-for="ev in (eventsByDay.get(cell.key) ?? [])"
+          :key="ev.id"
+          :event="ev"
+          :compact="true"
+          @select="selected = $event"
+        />
       </div>
     </div>
 
@@ -97,44 +122,131 @@ const liveSelected = computed(() =>
 </template>
 
 <style scoped>
-.month { padding: .75rem 1rem 1.5rem; }
-.head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
-.head h2 { margin: 0; font-size: 1.2rem; }
-.nav { display: flex; gap: .25rem; }
-.nav button {
-  padding: .35rem .75rem; border: 1px solid #ccc; border-radius: 6px;
-  background: #fff; color: #333; cursor: pointer; font-size: 1rem;
+.month-head { text-align: center; padding: 0 0 1.25rem; }
+.month-title {
+  margin: 0.5rem 0 0;
+  color: var(--ink);
+  line-height: 1;
 }
-.nav button.ghost { background: #f3f4f6; }
+.month-num {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.month-suffix {
+  font-family: var(--font-jp);
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+.month-frame {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .55rem 1rem;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  margin-top: 1rem;
+  line-height: 1;
+  white-space: nowrap;
+  font-family: var(--font-nav);
+  font-size: .8rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.month-nav {
+  display: flex;
+  gap: .75rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.btn-frame {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: .35rem .9rem;
+  font-family: var(--font-nav);
+  font-size: .7rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  font-weight: 500;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-frame:hover, .btn-frame.active {
+  background: var(--berry);
+  color: #fff;
+  border-color: var(--berry);
+}
+
 .weekrow {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  font-size: .75rem; color: #666; text-align: center;
-  border-bottom: 1px solid #e5e7eb; padding-bottom: .25rem;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-family: var(--font-nav);
+  font-size: .85rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: .8rem 0;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  text-align: center;
+  font-weight: 500;
+  margin-top: 1rem;
 }
-.weekday.sun { color: #ef4444; }
-.weekday.sat { color: #2563eb; }
-.grid {
-  display: grid; grid-template-columns: repeat(7, 1fr);
-  gap: 1px; background: #e5e7eb; border: 1px solid #e5e7eb;
+.weekrow div.sun { color: var(--berry); }
+
+.grid-month {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border: 2px solid var(--ink);
+  border-top: 0;
+  background: var(--ink);
+  gap: 1px;
 }
 .cell {
-  background: #fff; min-height: 5.5rem;
-  padding: .15rem .2rem; display: flex; flex-direction: column; gap: .15rem;
-  overflow: hidden;
+  background: var(--paper);
+  min-height: 5.5rem;
+  padding: .35rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  text-align: left;
+  transition: background .2s;
+  min-width: 0;
 }
-.cell.out-of-month { background: #fafafa; color: #bbb; }
-.cell.today { background: #fff7ed; }
-.cell.today .date-num { color: #ea580c; font-weight: 700; }
-.date-num { font-size: .75rem; text-align: right; padding-right: .15rem; }
-.cell.sun .date-num { color: #ef4444; }
-.cell.sat .date-num { color: #2563eb; }
-.cell.out-of-month .date-num { color: #ccc; }
-.events { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
-.empty { text-align: center; color: #888; padding: 2rem 0; }
+.cell:hover { background: #fff; }
+.cell .num {
+  font-family: var(--font-day);
+  font-weight: 400;
+  font-size: 1.15rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.cell.today {
+  box-shadow: inset 0 4px 0 var(--berry);
+}
+.cell.today .num { color: var(--ink); font-weight: 900; }
+.cell.out { background: var(--bg); }
+.cell.out .num { color: var(--ink-faint); }
+.cell.sun .num { color: var(--berry); }
 
-@media (max-width: 480px) {
-  .month { padding: .5rem; }
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  padding: 2rem 0;
+  font-family: var(--font-jp);
+}
+
+@media (max-width: 600px) {
+  .month-num { font-size: 2.5rem; }
+  .month-suffix { font-size: 1.5rem; }
   .cell { min-height: 4.5rem; }
-  .date-num { font-size: .7rem; }
 }
 </style>

@@ -1,15 +1,12 @@
-:root {
-  font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans TC', sans-serif;
-  line-height: 1.5;
-  color: #111;
-  background: #fff;
-  -webkit-font-smoothing: antialiased;
-}
+@import './lib/colors_and_type.css';
 
-* { box-sizing: border-box; }
+/* ===================================================================
+ * Global resets & base — minimum on top of colors_and_type.css base.
+ * =================================================================== */
 
-body { margin: 0; }
+a { color: var(--berry); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-a { color: #2563eb; }
+button { font: inherit; cursor: pointer; }
 
-button { font: inherit; }
+/* Mobile body padding handled per-view; keep root clean */

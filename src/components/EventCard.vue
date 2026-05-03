@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
 import { formatTimeInTz } from '../lib/time.js'
-import { tzCodeOf, DEFAULT_TZ } from '../lib/timezones.js'
 import { readableTextOn } from '../lib/colors.js'
 
 const props = defineProps({
@@ -22,7 +21,6 @@ const idols = computed(() =>
     .filter(Boolean)
 )
 
-// Multi-idol → zebra stripes; single → solid; none → neutral.
 const bgStyle = computed(() => {
   const colors = idols.value.map(i => i.color)
   if (colors.length === 0) return { background: '#9ca3af', color: '#fff' }
@@ -31,14 +29,13 @@ const bgStyle = computed(() => {
   }
   const step = 100 / colors.length
   const stops = colors.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')
-  // For multi-idol: pick text color based on average luminance
   const avgYiq = colors.reduce((sum, c) => {
     const n = parseInt(c.slice(1), 16)
     return sum + (((n >> 16) & 0xff) * 299 + ((n >> 8) & 0xff) * 587 + (n & 0xff) * 114) / 1000
   }, 0) / colors.length
   return {
     background: `linear-gradient(135deg, ${stops})`,
-    color: avgYiq >= 160 ? '#111' : '#fff',
+    color: avgYiq >= 160 ? '#1a0f15' : '#fff',
   }
 })
 
@@ -46,48 +43,59 @@ const isPast = computed(() => {
   if (!props.event.startAt) return false
   return new Date(props.event.startAt).getTime() < Date.now()
 })
+
+const shortTitle = computed(() => {
+  const t = props.event.title || ''
+  // strip after「 mark, take first whitespace-delimited token; append "聯演" if multi
+  const head = t.split('「')[0].split(/\s+/)[0]
+  return idols.value.length > 1 ? `${head} 聯演` : head
+})
 </script>
 
 <template>
-  <div class="card" :class="{ past: isPast, compact }" :style="bgStyle" @click="emit('select', event)">
-    <div class="card-inner">
-      <span v-if="!compact" class="time">{{ formatTimeInTz(event.startAt, event.timezone) }}</span>
-      <span class="title">{{ event.title }}</span>
-      <span v-if="hasConflict" class="conflict" title="時間衝突">⚠️</span>
-      <span v-if="idols.length > 1" class="idol-chips">
-        <span v-for="i in idols" :key="i.id" class="chip">{{ i.name }}</span>
-      </span>
-      <span v-if="isPast" class="past-tag">已過</span>
-    </div>
+  <div class="ev" :class="{ past: isPast }" :style="bgStyle" @click="emit('select', event)" :title="event.title">
+    <span class="t">{{ formatTimeInTz(event.startAt, event.timezone) }}</span>
+    <span class="ev-title">{{ compact ? shortTitle : event.title }}</span>
+    <span v-if="hasConflict" class="conflict" title="時間衝突">⚠</span>
   </div>
 </template>
 
 <style scoped>
-.card {
-  border-radius: 4px;
-  font-size: .75rem; line-height: 1.3;
-  overflow: hidden; cursor: pointer;
-  border: 1px solid rgba(0,0,0,0.08);
-}
-.card.past { opacity: .55; }
-.card-inner {
-  padding: .25rem .4rem;
-  display: flex; flex-wrap: wrap; gap: .25rem; align-items: center;
-}
-.compact .card-inner { padding: .15rem .35rem; }
-.time { font-weight: 600; opacity: .9; }
-.title {
-  flex: 1; min-width: 0; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis;
-}
-.idol-chips { display: flex; gap: .15rem; flex-wrap: wrap; }
-.chip {
-  background: rgba(255,255,255,0.25); padding: 0 .3rem; border-radius: 3px;
+.ev {
   font-size: .65rem;
+  line-height: 1.25;
+  cursor: pointer;
+  padding: .12rem .35rem;
+  border-radius: 999px;
+  font-weight: 500;
+  border: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: .15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: filter .15s;
 }
-.past-tag {
-  background: rgba(0,0,0,0.4); padding: 0 .3rem; border-radius: 3px;
-  font-size: .65rem;
+.ev:hover { filter: brightness(1.05); }
+.ev.past { opacity: .55; }
+.t {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: .55rem;
+  font-weight: 600;
+  opacity: .75;
 }
-.conflict { font-size: .7rem; line-height: 1; }
+.ev-title {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-family: var(--font-jp);
+}
+.conflict {
+  color: #c2410c;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .ev-title { display: none; }
+}
 </style>

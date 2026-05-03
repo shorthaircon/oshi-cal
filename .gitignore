@@ -26,3 +26,11 @@ dist-ssr
 # 內部規格文件，不公開
 tasks/
 .claude/
+preview/
+oshi-cal-design-system/
+
+# API 相關，不公開
+.env
+.env.*
+!.env.example
+worker/

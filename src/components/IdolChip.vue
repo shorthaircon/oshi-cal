@@ -20,11 +20,13 @@ const style = computed(() => ({
 <style scoped>
 .idol-chip {
   display: inline-block;
-  padding: .15rem .5rem;
+  padding: .15rem .55rem;
   border-radius: 999px;
+  font-family: var(--font-jp);
   font-weight: 500;
   border: 1px solid rgba(0,0,0,0.12);
+  line-height: 1.4;
 }
 .idol-chip.sm { font-size: .7rem; padding: .1rem .45rem; }
-.idol-chip.md { font-size: .8rem; }
+.idol-chip.md { font-size: .85rem; }
 </style>

@@ -81,19 +81,19 @@ function submit() {
 </script>
 
 <template>
-  <form class="form" @submit.prevent="submit">
-    <label class="row">
+  <form class="event-form" @submit.prevent="submit">
+    <label class="field">
       <span>標題 <em>*</em></span>
       <input v-model="title" type="text" required maxlength="200" />
     </label>
 
-    <div class="row">
+    <div class="field">
       <span>推し（可多選）</span>
       <div v-if="idolsStore.idols.length === 0" class="hint">
         還沒有推し。<router-link to="/idols">去新增</router-link>
       </div>
       <div v-else class="idol-checks">
-        <label v-for="i in idolsStore.idols" :key="i.id" class="chk">
+        <label v-for="i in idolsStore.idols" :key="i.id" class="chk" :class="{ on: idolIds.includes(i.id) }">
           <input type="checkbox" :value="i.id" v-model="idolIds" />
           <span class="dot" :style="{ background: i.color }" />
           {{ i.name }}
@@ -101,7 +101,7 @@ function submit() {
       </div>
     </div>
 
-    <label class="row">
+    <label class="field">
       <span>時區</span>
       <select v-model="timezone">
         <option v-for="tz in TZ_OPTIONS" :key="tz.id" :value="tz.id">
@@ -110,12 +110,12 @@ function submit() {
       </select>
     </label>
 
-    <div class="grid2">
-      <label class="row">
+    <div class="grid-2">
+      <label class="field">
         <span>日期 <em>*</em></span>
         <input v-model="startDate" type="date" required />
       </label>
-      <div class="row">
+      <div class="field">
         <span>時間 <em>*</em></span>
         <button type="button" class="time-btn" @click="clockOpen = true">
           {{ ampmDisplay || '選擇時間' }}
@@ -123,37 +123,37 @@ function submit() {
       </div>
     </div>
 
-    <label class="row">
+    <label class="field">
       <span>地點</span>
       <input v-model="venue" type="text" maxlength="200" />
     </label>
 
-    <label class="row">
+    <label class="field">
       <span>我的狀態</span>
       <select v-model="status">
         <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
       </select>
     </label>
 
-    <div class="grid2">
-      <label class="row">
+    <div class="grid-2">
+      <label class="field">
         <span>票價（JPY）</span>
         <input v-model="ticketPrice" type="number" min="0" step="100" />
       </label>
-      <label class="row">
+      <label class="field">
         <span>購票連結</span>
         <input v-model="ticketUrl" type="url" placeholder="https://" />
       </label>
     </div>
 
-    <label class="row">
+    <label class="field">
       <span>個人筆記 / 備忘</span>
       <textarea v-model="notes" rows="3" />
     </label>
 
-    <div class="actions">
-      <button type="button" class="ghost" @click="emit('cancel')">取消</button>
-      <button type="submit" :disabled="!title.trim() || !startDate || !startTime">
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" @click="emit('cancel')">取消</button>
+      <button type="submit" class="btn-solid" :disabled="!title.trim() || !startDate || !startTime">
         {{ initial ? '儲存' : '新增' }}
       </button>
     </div>
@@ -167,36 +167,87 @@ function submit() {
 </template>
 
 <style scoped>
-.form { display: flex; flex-direction: column; gap: 1rem; }
-.row { display: flex; flex-direction: column; gap: .35rem; }
-.row > span { font-size: .85rem; color: #555; }
-.row em { color: #ef4444; font-style: normal; }
-.row input, .row select, .row textarea {
-  padding: .5rem .6rem; border: 1px solid #ccc; border-radius: 6px;
-  font-size: 1rem; font-family: inherit;
+.event-form { display: flex; flex-direction: column; gap: 1rem; }
+.field { display: flex; flex-direction: column; gap: .4rem; }
+.field > span {
+  font-family: var(--font-jp);
+  font-size: .9rem; color: var(--ink-soft);
+  font-weight: 500;
+}
+.field em { color: #ef4444; font-style: normal; margin-left: .15rem; }
+.field input, .field select, .field textarea {
+  padding: .55rem .7rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: .95rem;
+  color: var(--ink);
+  background: #fff;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none;
+  border-color: var(--berry);
+  box-shadow: 0 0 0 3px rgba(231, 86, 143, 0.18);
 }
 .time-btn {
-  padding: .5rem .8rem; border: 1px solid #ccc; border-radius: 6px;
-  background: #fff; color: #111; cursor: pointer; font-size: 1rem;
+  padding: .55rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: .95rem;
   text-align: left;
+  color: var(--ink);
+  cursor: pointer;
 }
-.time-btn:hover { background: #f5f5f5; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 480px) { .grid2 { grid-template-columns: 1fr; } }
+.time-btn:hover { border-color: var(--ink); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
 .idol-checks { display: flex; flex-wrap: wrap; gap: .5rem; }
 .chk {
   display: inline-flex; align-items: center; gap: .35rem;
-  padding: .35rem .6rem; border: 1px solid #ddd; border-radius: 999px;
-  cursor: pointer; font-size: .9rem;
+  padding: .35rem .65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer; font-size: .85rem;
+  background: #fff; font-family: var(--font-jp);
+  transition: all .2s;
 }
+.chk.on { border-color: var(--berry); background: #fef0f5; }
 .chk input { margin: 0; }
-.dot { width: .9rem; height: .9rem; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); }
-.hint { font-size: .9rem; color: #888; }
-.actions { display: flex; gap: .5rem; justify-content: flex-end; }
-.actions button {
-  padding: .5rem 1rem; border-radius: 6px; border: 1px solid #ccc;
-  background: #111; color: #fff; cursor: pointer;
+.chk .dot {
+  width: .8rem; height: .8rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.15);
 }
-.actions button:disabled { opacity: .5; cursor: not-allowed; }
-.actions .ghost { background: transparent; color: #333; }
+.hint { font-size: .9rem; color: var(--ink-faint); }
+
+.form-actions {
+  display: flex; gap: .5rem; justify-content: flex-end;
+  margin-top: .5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.btn-solid {
+  background: var(--ink); color: #fff;
+  border: 2px solid var(--ink);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body);
+  font-size: .9rem; font-weight: 500;
+  cursor: pointer; border-radius: 6px;
+  transition: all .2s; white-space: nowrap;
+}
+.btn-solid:hover { background: var(--berry); border-color: var(--berry); }
+.btn-solid:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body); font-size: .9rem;
+  cursor: pointer; border-radius: 6px;
+  white-space: nowrap;
+}
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
 </style>

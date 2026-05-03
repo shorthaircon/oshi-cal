@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue'
 import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
-import { formatInTz, formatTimeInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
-import { tzCodeOf, DEFAULT_TZ } from '../lib/timezones.js'
+import { formatTimeInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
+import { tzCodeOf } from '../lib/timezones.js'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
 
@@ -11,7 +11,6 @@ const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 
 const showPast = ref(false)
-
 const todayKey = deviceTodayKey()
 
 const sorted = computed(() => {
@@ -43,17 +42,25 @@ const selected = ref(null)
 const liveSelected = computed(() =>
   selected.value ? eventsStore.byId(selected.value.id) : null
 )
-function formatDay(key) {
+function dayLabel(key) {
   const [y, m, d] = key.split('-').map(Number)
   const dow = ['日','一','二','三','四','五','六'][new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
-  return `${y}/${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')} (${dow})`
+  return { day: String(d).padStart(2, '0'), monthYear: `${m}月 · 週${dow}` }
+}
+function dayPart(ev) {
+  const k = dateKeyInTz(ev.startAt, ev.timezone)
+  if (!k) return { day: '', month: '' }
+  const [, m, d] = k.split('-').map(Number)
+  return { day: String(d).padStart(2, '0'), month: `${m}月` }
 }
 </script>
 
 <template>
-  <section class="timeline">
-    <header class="head">
-      <h2>時間軸</h2>
+  <section class="view-timeline">
+    <header class="timeline-head">
+      <div class="brand-mark">— Forthcoming Engagements —</div>
+      <h2 class="t-h2">時間軸</h2>
+      <p class="head-sub">in order of arrival</p>
       <label class="toggle">
         <input type="checkbox" v-model="showPast" />
         顯示過去活動
@@ -73,26 +80,24 @@ function formatDay(key) {
     <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
     <div v-for="[key, list] in grouped" :key="key" class="day">
-      <div class="day-head" :class="{ past: isPastKey(key), today: key === todayKey }">
-        <span class="day-key">{{ formatDay(key) }}</span>
-        <span v-if="key === todayKey" class="today-tag">今天</span>
-        <span v-else-if="isPastKey(key)" class="past-tag">已過</span>
-      </div>
-      <ul class="list">
-        <li v-for="ev in list" :key="ev.id" class="card" @click="selected = ev">
-          <div class="line1">
-            <span class="time">{{ formatTimeInTz(ev.startAt, ev.timezone) }} <span class="tz">{{ tzCodeOf(ev.timezone) }}</span></span>
-            <strong class="title">{{ ev.title }}</strong>
-            <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠️</span>
-            <span class="status" :data-s="ev.status">{{ statusLabel(ev.status) }}</span>
+      <ul class="agenda-list">
+        <li v-for="ev in list" :key="ev.id" class="agenda-row" @click="selected = ev">
+          <div class="when">
+            <span class="day">{{ dayPart(ev).day }}</span>
+            <span class="month">{{ dayPart(ev).month }}</span>
+            <span class="time">{{ formatTimeInTz(ev.startAt, ev.timezone) }} {{ tzCodeOf(ev.timezone) }}</span>
           </div>
-          <div v-if="idolsOf(ev).length" class="chips">
-            <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
+          <div class="title">
+            {{ ev.title }}
+            <small>
+              <span v-if="ev.venue">📍 {{ ev.venue }}</span>
+              <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict-flag">⚠ {{ eventsStore.conflictMap.get(ev.id).length }} 場衝突</span>
+              <span class="status-inline">· {{ statusLabel(ev.status) }}</span>
+            </small>
           </div>
-          <div class="meta">
-            <span v-if="ev.venue">📍 {{ ev.venue }}</span>
-            <span v-if="ev.ticketPrice != null">¥{{ ev.ticketPrice.toLocaleString() }}</span>
-            <a v-if="ev.ticketUrl" :href="ev.ticketUrl" target="_blank" rel="noopener">購票</a>
+          <div v-if="idolsOf(ev).length" class="multi-chips">
+            <IdolChip v-for="i in idolsOf(ev).slice(0, 3)" :key="i.id" :idol="i" size="sm" />
+            <span v-if="idolsOf(ev).length > 3" class="more">+{{ idolsOf(ev).length - 3 }}</span>
           </div>
         </li>
       </ul>
@@ -101,35 +106,184 @@ function formatDay(key) {
 </template>
 
 <style scoped>
-.timeline { padding: 1rem; }
-.head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.head h2 { margin: 0; }
-.toggle { font-size: .85rem; color: #555; display: flex; align-items: center; gap: .35rem; }
-.empty { text-align: center; color: #888; padding: 2rem 0; }
-
-.day { margin-bottom: 1rem; }
-.day-head {
-  font-size: .85rem; color: #555; padding: .25rem 0;
-  border-bottom: 1px solid #e5e7eb; margin-bottom: .5rem;
-  display: flex; gap: .5rem; align-items: center;
+.view-timeline { text-align: left; }
+.timeline-head {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
 }
-.day-head.today { color: #ea580c; font-weight: 600; }
-.day-head.past { color: #999; }
-.today-tag { background: #fff7ed; color: #ea580c; font-size: .7rem; padding: .1rem .4rem; border-radius: 999px; }
-.past-tag { background: #f3f4f6; color: #888; font-size: .7rem; padding: .1rem .4rem; border-radius: 999px; }
-.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
-.card { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: .6rem .75rem; cursor: pointer; }
-.card:hover { background: #f3f4f6; }
-.line1 { display: flex; align-items: center; gap: .5rem; margin-bottom: .25rem; }
-.time { font-family: monospace; font-size: .85rem; color: #444; min-width: 3.5rem; }
-.tz { font-size: .65rem; color: #999; }
-.title { flex: 1; font-size: .95rem; }
-.status { font-size: .7rem; padding: .1rem .5rem; border-radius: 999px; background: #e5e7eb; color: #374151; }
-.status[data-s="ticketed"] { background: #dbeafe; color: #1e40af; }
-.status[data-s="attended"] { background: #d1fae5; color: #065f46; }
-.status[data-s="cancelled"] { background: #fee2e2; color: #991b1b; }
-.chips { display: flex; flex-wrap: wrap; gap: .25rem; margin: .25rem 0; }
-.chip { font-size: .7rem; padding: .1rem .5rem; border-radius: 999px; color: #fff; font-weight: 500; }
-.meta { display: flex; gap: 1rem; font-size: .8rem; color: #555; flex-wrap: wrap; }
-.meta a { color: #2563eb; }
+.brand-mark {
+  font-family: var(--font-nav);
+  font-size: .7rem; letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--berry); font-weight: 500;
+  margin-bottom: .5rem;
+}
+.t-h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 .25rem;
+}
+.head-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: .9rem;
+  color: var(--ink-faint);
+  margin: 0 0 1rem;
+}
+.toggle {
+  font-size: .85rem;
+  color: var(--ink-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-family: var(--font-jp);
+}
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  padding: 2rem 0;
+  font-family: var(--font-jp);
+}
+
+.day { margin-bottom: 1.5rem; }
+.day-divider {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .5rem 0;
+  margin-bottom: .75rem;
+  border-bottom: 1px solid var(--ink);
+}
+.day-divider .day-key {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.day-divider .day-month {
+  font-family: var(--font-nav);
+  font-size: .7rem;
+  letter-spacing: .15em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  flex: 1;
+}
+.day-tag {
+  font-family: var(--font-nav);
+  font-size: .65rem;
+  letter-spacing: .15em;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+}
+.today-tag { background: var(--berry); color: #fff; }
+.past-tag { background: var(--gold); color: #fff; }
+
+.agenda-list {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: .85rem;
+}
+.agenda-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 1.25rem;
+  align-items: center;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: .9rem 1.1rem;
+  transition: transform .15s, box-shadow .15s;
+}
+.agenda-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 86, 143, 0.15);
+}
+.agenda-row .when {
+  text-align: center;
+  padding: .4rem .25rem;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 0;
+}
+.agenda-row .when .day {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 1px;
+}
+.agenda-row .when .month {
+  font-family: var(--font-jp);
+  font-size: .7rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+  letter-spacing: .05em;
+  line-height: 1;
+}
+.agenda-row .when .time {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: .7rem;
+  color: var(--ink-faint);
+  margin-top: .25rem;
+  border-top: 1px solid var(--line-soft);
+  padding-top: .3rem;
+}
+.status-inline { color: var(--ink-faint); }
+.agenda-row .title {
+  font-family: var(--font-jp);
+  font-size: .95rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.agenda-row .title small {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  font-family: var(--font-body);
+  font-size: .8rem;
+  color: var(--ink-faint);
+  margin-top: .25rem;
+  font-weight: 400;
+}
+.conflict-flag { color: #c2410c; }
+.multi-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+.more {
+  font-family: var(--font-nav);
+  font-size: .7rem;
+  color: var(--ink-faint);
+  letter-spacing: .1em;
+}
+
+@media (max-width: 600px) {
+  .agenda-row {
+    grid-template-columns: 4rem 1fr;
+    gap: .75rem;
+  }
+  .multi-chips {
+    grid-column: 2;
+    justify-self: start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: .35rem;
+  }
+}
 </style>

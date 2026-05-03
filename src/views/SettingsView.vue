@@ -99,17 +99,20 @@ function stamp(d) {
 </script>
 
 <template>
-  <section class="settings">
-    <h2>設定</h2>
+  <section class="view-settings">
+    <header class="page-head">
+      <div class="brand-mark">— Settings —</div>
+      <h2 class="t-h2">設定</h2>
+    </header>
 
-    <div class="card">
-      <h3>備份</h3>
+    <div class="stage">
+      <h3 class="stage-title">備份</h3>
       <p class="muted">
         所有資料只存在這個瀏覽器的 localStorage。換裝置或清掉瀏覽器資料前，請先匯出備份。
       </p>
       <div class="row">
-        <button @click="exportJson">匯出 JSON</button>
-        <button class="ghost" @click="pickFile">匯入 JSON</button>
+        <button class="btn-solid" @click="exportJson">匯出 JSON</button>
+        <button class="btn-ghost" @click="pickFile">匯入 JSON</button>
         <input
           ref="fileInput"
           type="file"
@@ -120,50 +123,120 @@ function stamp(d) {
       </div>
     </div>
 
-    <div class="card">
-      <h3>匯出至系統行事曆</h3>
+    <div class="stage">
+      <h3 class="stage-title">匯出至系統行事曆</h3>
       <p class="muted">
         產出 .ics 檔，雙擊匯入 macOS / iOS 系統行事曆，可獲得活動提醒。
       </p>
       <div class="row">
-        <button @click="exportIcsAll">匯出全部活動 (.ics)</button>
+        <button class="btn-solid" @click="exportIcsAll">匯出全部活動 (.ics)</button>
       </div>
       <p v-if="message" class="msg">{{ message }}</p>
     </div>
 
-    <div v-if="preview" class="card preview">
-      <h3>確認匯入</h3>
-      <ul>
-        <li>推し：{{ preview.idolCount }} 筆</li>
-        <li>活動：{{ preview.eventCount }} 筆</li>
+    <div v-if="preview" class="stage preview-stage">
+      <h3 class="stage-title">確認匯入</h3>
+      <ul class="preview-list">
+        <li>推し：<span class="num">{{ preview.idolCount }}</span> 筆</li>
+        <li>活動：<span class="num">{{ preview.eventCount }}</span> 筆</li>
         <li>備份版本：{{ preview.version ?? '未指定' }}</li>
       </ul>
       <p v-if="preview.warning" class="warn">⚠️ {{ preview.warning }}</p>
       <p class="danger">匯入會<strong>覆蓋</strong>目前所有資料。</p>
       <div class="row">
-        <button @click="confirmImport">確認匯入</button>
-        <button class="ghost" @click="cancelImport">取消</button>
+        <button class="btn-solid" @click="confirmImport">確認匯入</button>
+        <button class="btn-ghost" @click="cancelImport">取消</button>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.settings { padding: 1rem; }
-.card {
-  border: 1px solid #eee; border-radius: 8px;
-  padding: 1rem; margin-bottom: 1rem; background: #fafafa;
+.page-head {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
 }
-.card h3 { margin: 0 0 .5rem; }
-.muted { color: #666; font-size: .9rem; margin: 0 0 1rem; }
+.brand-mark {
+  font-family: var(--font-nav);
+  font-size: .7rem; letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--berry); font-weight: 500;
+  margin-bottom: .5rem;
+}
+.t-h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+
+.stage {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 0 var(--ink), 0 12px 24px rgba(59, 31, 43, 0.08);
+  margin-bottom: 1.5rem;
+}
+.stage-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 .75rem;
+}
+.muted {
+  color: var(--ink-soft);
+  font-size: .9rem;
+  margin: 0 0 1rem;
+  font-family: var(--font-jp);
+}
 .row { display: flex; gap: .5rem; flex-wrap: wrap; }
-button {
-  padding: .5rem 1rem; border-radius: 6px; border: 1px solid #ccc;
-  background: #111; color: #fff; cursor: pointer;
+.btn-solid {
+  background: var(--ink); color: #fff;
+  border: 2px solid var(--ink);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body);
+  font-size: .9rem; font-weight: 500;
+  cursor: pointer; border-radius: 6px;
+  transition: all .2s; white-space: nowrap;
 }
-button.ghost { background: #fff; color: #333; }
-.msg { font-size: .9rem; color: #065f46; margin: .75rem 0 0; }
-.warn { color: #b45309; font-size: .9rem; }
-.danger { color: #b91c1c; font-size: .9rem; }
-.preview { background: #fffbeb; border-color: #fde68a; }
+.btn-solid:hover { background: var(--berry); border-color: var(--berry); }
+.btn-ghost {
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body); font-size: .9rem;
+  cursor: pointer; border-radius: 6px;
+  white-space: nowrap;
+}
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
+
+.msg {
+  font-size: .85rem;
+  color: var(--ink-soft);
+  margin: .75rem 0 0;
+  font-family: var(--font-jp);
+}
+.warn { color: #b45309; font-size: .9rem; font-family: var(--font-jp); }
+.danger { color: #b91c1c; font-size: .9rem; font-family: var(--font-jp); }
+.preview-stage { background: #fef0c7; border-color: var(--gold); }
+.preview-list {
+  margin: .5rem 0;
+  padding-left: 1.25rem;
+  font-family: var(--font-jp);
+  font-size: .9rem;
+}
+.preview-list .num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
 </style>

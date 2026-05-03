@@ -34,8 +34,8 @@ function pad(n) { return String(n).padStart(2, '0') }
 // SVG geometry
 const SIZE = 260
 const CENTER = SIZE / 2
-const RADIUS_NUMBERS = 102
-const RADIUS_HAND = 92
+const RADIUS_NUMBERS = 100
+const RADIUS_HAND = 100
 const RADIUS_END = 18
 
 const numbers = computed(() => {
@@ -107,22 +107,22 @@ function confirm() {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="bg" @click.self="emit('close')">
-      <div class="dialog" role="dialog" aria-modal="true">
-        <p class="caption">選取時間</p>
-        <div class="display">
+    <div v-if="open" class="clock-bg" @click.self="emit('close')">
+      <div class="clock-dialog" role="dialog" aria-modal="true">
+        <p class="clock-caption">— Pick a time —</p>
+        <div class="clock-display">
           <button
-            type="button" class="big-num"
+            type="button" class="clock-bignum"
             :class="{ active: stage === 'hour' }"
             @click="stage = 'hour'"
           >{{ pad(h12) }}</button>
-          <span class="colon">:</span>
+          <span class="clock-colon">:</span>
           <button
-            type="button" class="big-num"
+            type="button" class="clock-bignum"
             :class="{ active: stage === 'minute' }"
             @click="stage = 'minute'"
           >{{ pad(m) }}</button>
-          <div class="ampm">
+          <div class="clock-ampm">
             <button
               type="button"
               :class="{ active: ampm === 'AM' }"
@@ -138,7 +138,7 @@ function confirm() {
 
         <svg
           :viewBox="`0 0 ${SIZE} ${SIZE}`"
-          class="face"
+          class="clock-face"
           @mousedown="onPointer($event, true)"
           @mousemove="onPointer($event, false)"
           @mouseup="onPointerEnd($event, false)"
@@ -161,9 +161,9 @@ function confirm() {
           </g>
         </svg>
 
-        <div class="actions">
-          <button class="ghost" type="button" @click="emit('close')">取消</button>
-          <button type="button" @click="confirm">確定</button>
+        <div class="clock-actions">
+          <button type="button" class="btn-ghost" @click="emit('close')">取消</button>
+          <button type="button" class="btn-solid" @click="confirm">確定</button>
         </div>
       </div>
     </div>
@@ -171,51 +171,115 @@ function confirm() {
 </template>
 
 <style scoped>
-.bg {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+.clock-bg {
+  position: fixed; inset: 0;
+  background: rgba(59, 31, 43, 0.55);
   display: flex; align-items: center; justify-content: center;
   z-index: 200; padding: 1rem;
 }
-.dialog {
-  background: #1f1b1f; color: #f5e8e8;
-  border-radius: 16px; padding: 1.25rem;
+.clock-dialog {
+  background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 4px;
+  box-shadow: 0 16px 48px rgba(59,31,43,.25);
+  padding: 1.25rem;
   max-width: 360px; width: 100%;
 }
-.caption { margin: 0 0 1rem; font-size: .85rem; color: #c9b8b8; }
-.display { display: flex; align-items: center; justify-content: center; gap: .5rem; margin-bottom: 1rem; }
-.big-num {
-  font-size: 2.6rem; font-weight: 600; line-height: 1;
-  background: #3a2a2a; color: #d6c0c0;
-  border: none; border-radius: 8px; padding: .35rem .6rem;
-  cursor: pointer; min-width: 5rem; font-variant-numeric: tabular-nums;
+.clock-caption {
+  margin: 0 0 1rem;
+  font-family: var(--font-nav);
+  font-size: .7rem;
+  letter-spacing: .25em;
+  color: var(--berry);
+  text-transform: uppercase;
+  font-weight: 500;
+  text-align: center;
 }
-.big-num.active { background: #6b1f1f; color: #fde2e2; }
-.colon { font-size: 2.2rem; color: #d6c0c0; }
-.ampm { display: flex; flex-direction: column; gap: .35rem; margin-left: .5rem; }
-.ampm button {
-  background: transparent; color: #c9b8b8;
-  border: 1px solid #5a4a4a; border-radius: 999px;
-  padding: .25rem .65rem; cursor: pointer; font-size: .85rem; min-width: 2.8rem;
+.clock-display {
+  display: flex; align-items: center; justify-content: center;
+  gap: .35rem; margin-bottom: 1rem;
 }
-.ampm button.active { background: #b86b6b; color: #2a1414; border-color: #b86b6b; }
+.clock-bignum {
+  font-family: var(--font-nav);
+  font-size: 2.4rem; font-weight: 500; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg);
+  color: var(--ink-soft);
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+  min-width: 4.5rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.clock-bignum.active {
+  background: var(--berry); color: #fff; border-color: var(--berry);
+}
+.clock-colon {
+  font-family: var(--font-nav);
+  font-size: 2.4rem; font-weight: 500;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+.clock-ampm {
+  display: flex; flex-direction: column;
+  gap: .35rem; margin-left: .5rem;
+}
+.clock-ampm button {
+  background: #fff; color: var(--ink-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .25rem .65rem;
+  cursor: pointer;
+  font-size: .75rem;
+  min-width: 2.6rem;
+  font-family: var(--font-nav);
+  letter-spacing: .1em;
+  font-weight: 500;
+}
+.clock-ampm button.active {
+  background: var(--berry); color: #fff; border-color: var(--berry);
+}
 
-.face {
+.clock-face {
   width: 100%; aspect-ratio: 1;
   display: block; user-select: none; touch-action: none;
 }
-.dial { fill: #2a2024; }
-.hand { stroke: #f4b6b6; stroke-width: 2; stroke-linecap: round; }
-.hand-end { fill: #f4b6b6; opacity: .85; }
-.hub { fill: #f4b6b6; }
-.num { fill: #f5e8e8; font-size: 16px; pointer-events: none; }
-.num.selected { fill: #2a1414; font-weight: 600; }
-
-.actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
-.actions button {
-  background: transparent; color: #f4b6b6;
-  border: none; padding: .5rem 1rem; border-radius: 6px;
-  font-size: .95rem; cursor: pointer;
+.dial { fill: var(--bg); stroke: var(--ink); stroke-width: 1.5; }
+.hand { stroke: var(--berry); stroke-width: 2; stroke-linecap: round; }
+.hand-end { fill: var(--berry); opacity: .9; }
+.hub { fill: var(--berry); }
+.num {
+  fill: var(--ink);
+  font-family: var(--font-nav);
+  font-size: 15px;
+  font-weight: 500;
+  pointer-events: none;
 }
-.actions button.ghost { color: #c9b8b8; }
-.actions button:hover { background: rgba(244,182,182,0.1); }
+.num.selected { fill: #fff; }
+
+.clock-actions {
+  display: flex; justify-content: flex-end;
+  gap: .5rem; margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: .75rem;
+}
+.btn-solid {
+  background: var(--ink); color: #fff;
+  border: 2px solid var(--ink);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body);
+  font-size: .9rem; font-weight: 500;
+  cursor: pointer; border-radius: 6px;
+  transition: all .2s;
+}
+.btn-solid:hover { background: var(--berry); border-color: var(--berry); }
+.btn-ghost {
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line);
+  padding: .55rem 1.2rem;
+  font-family: var(--font-body); font-size: .9rem;
+  cursor: pointer; border-radius: 6px;
+}
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
 </style>
