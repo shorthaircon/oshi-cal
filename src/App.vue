@@ -1,10 +1,14 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useIdolsStore } from './stores/idols.js'
 import { useEventsStore } from './stores/events.js'
 import { useMetaStore } from './stores/meta.js'
 import { needsBackup } from './lib/backupReminder.js'
+import { installClipboardWatcher } from './lib/clipboardDetect.js'
 import BottomTabBar from './components/BottomTabBar.vue'
+import ClipboardBanner from './components/ClipboardBanner.vue'
+
+onMounted(() => installClipboardWatcher())
 
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
@@ -41,6 +45,7 @@ const BASE = import.meta.env.BASE_URL
       </nav>
     </header>
     <main>
+      <ClipboardBanner />
       <router-view />
     </main>
     <BottomTabBar />

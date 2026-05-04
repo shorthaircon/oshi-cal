@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { parseEventernoteEvent, parseEventernoteActorList } from '../lib/eventernoteParser.js'
 import { classifyEventernoteUrl } from '../lib/eventernoteUrl.js'
 import { useIdolsStore } from '../stores/idols.js'
@@ -10,12 +10,18 @@ import { tzCodeOf } from '../lib/timezones.js'
 
 const PROXY = import.meta.env.VITE_PROXY_URL || ''
 
+const props = defineProps({
+  initialUrl: { type: String, default: '' },
+})
 const emit = defineEmits(['done', 'cancel', 'fallback'])
 
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
 
-const url = ref('')
+const url = ref(props.initialUrl || '')
+watch(() => props.initialUrl, (v) => {
+  if (v && !url.value) url.value = v
+})
 const status = ref('idle') // idle | loading | preview | error
 const mode = ref('single') // single | batch
 const errorMsg = ref('')

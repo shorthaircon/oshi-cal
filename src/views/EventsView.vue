@@ -17,6 +17,7 @@ const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 const mode = ref('list')
 const fallbackInitial = ref(null)
+const prefillUrl = ref('')
 
 function goDetail(ev) {
   router.push({ name: 'event-detail', params: { id: ev.id } })
@@ -69,6 +70,9 @@ function isPast(ev) {
 function checkImportQuery() {
   if (route.query.import === '1') {
     mode.value = 'import'
+    if (typeof route.query.prefill === 'string') {
+      prefillUrl.value = route.query.prefill
+    }
     router.replace({ path: '/events', query: {} })
   }
 }
@@ -91,6 +95,7 @@ watch(() => route.query.import, checkImportQuery)
 
     <ImportEventPanel
       v-if="mode === 'import'"
+      :initial-url="prefillUrl"
       @done="cancel"
       @cancel="cancel"
       @fallback="onImportFallback"
