@@ -72,7 +72,7 @@ function exportIcs() {
           <div class="modal-eyebrow">— Event Detail —</div>
           <h3 class="modal-title">
             {{ event.title }}
-            <span v-if="isPast" class="past-tag">已過</span>
+            <span v-if="isPast" class="past-tag">已結束</span>
           </h3>
 
           <div v-if="conflicts.length" class="conflict-box">

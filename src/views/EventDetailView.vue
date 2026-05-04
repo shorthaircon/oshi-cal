@@ -107,7 +107,7 @@ function exportIcs() {
         <div class="eyebrow">— Event Detail —</div>
         <h1 class="title">
           {{ event.title }}
-          <span v-if="isPast" class="past-tag">已過</span>
+          <span v-if="isPast" class="past-tag">已結束</span>
         </h1>
         <div v-if="countdown" class="countdown-wrap">
           <span class="countdown-big" :class="{ urgent: countdown.urgent }">

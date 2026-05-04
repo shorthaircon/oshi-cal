@@ -103,7 +103,7 @@ function countdownLabel(ev) {
           >
             <div class="line1">
               <span class="time">{{ ev.timeUnknown ? `${formatInTz(ev.startAt, ev.timezone).split(' ')[0]} ・ 時間待確認` : formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
-              <span class="past-tag">已過</span>
+              <span class="past-tag">已結束</span>
             </div>
             <strong class="title">{{ ev.title }}</strong>
             <div class="meta">
