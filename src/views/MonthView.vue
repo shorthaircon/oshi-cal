@@ -46,6 +46,25 @@ function goToday() {
   cursor.value = { year: todayParts[0], month: todayParts[1] }
 }
 
+// Horizontal swipe to switch months (mobile)
+let swipeStartX = 0
+let swipeStartY = 0
+const SWIPE_THRESHOLD = 60
+function onTouchStart(e) {
+  if (e.touches.length !== 1) return
+  swipeStartX = e.touches[0].clientX
+  swipeStartY = e.touches[0].clientY
+}
+function onTouchEnd(e) {
+  if (!e.changedTouches.length) return
+  const dx = e.changedTouches[0].clientX - swipeStartX
+  const dy = e.changedTouches[0].clientY - swipeStartY
+  if (Math.abs(dx) < SWIPE_THRESHOLD) return
+  if (Math.abs(dy) > Math.abs(dx) * 0.7) return // mostly vertical
+  if (dx < 0) next()
+  else prev()
+}
+
 const prevMonth = computed(() => ((cursor.value.month + 10) % 12) + 1)
 const nextMonth = computed(() => (cursor.value.month % 12) + 1)
 
@@ -91,13 +110,18 @@ const monthOshiCount = computed(() => {
 
     <EmptyState v-if="eventsStore.events.length === 0" />
 
-    <div class="weekrow">
-      <div v-for="(w, i) in WEEK_LABELS_ZH" :key="i" :class="{ sun: i === 0 }">
-        {{ w }}
+    <div
+      class="grid-wrap"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
+    >
+      <div class="weekrow">
+        <div v-for="(w, i) in WEEK_LABELS_ZH" :key="i" :class="{ sun: i === 0 }">
+          {{ w }}
+        </div>
       </div>
-    </div>
 
-    <div class="grid-month">
+      <div class="grid-month">
       <div
         v-for="cell in cells"
         :key="cell.key"
@@ -118,12 +142,14 @@ const monthOshiCount = computed(() => {
         />
       </div>
     </div>
+    </div>
 
   </section>
 </template>
 
 <style scoped>
 .seg-wrap { display: flex; justify-content: center; }
+.grid-wrap { touch-action: pan-y; user-select: none; }
 .month-head { text-align: center; padding: 0 0 1.25rem; }
 .month-title {
   margin: 0.5rem 0 0;
