@@ -8,6 +8,7 @@ import IdolChip from '../components/IdolChip.vue'
 import EmptyState from '../components/EmptyState.vue'
 import CalendarSegment from '../components/CalendarSegment.vue'
 import { useRouter } from 'vue-router'
+import { countdownInfo } from '../lib/countdown.js'
 
 const router = useRouter()
 function goDetail(ev) {
@@ -95,6 +96,10 @@ function dayPart(ev) {
           <div class="title">
             {{ ev.title }}
             <small>
+              <span v-if="countdownInfo(ev)" class="countdown" :class="{ urgent: countdownInfo(ev).urgent }">
+                <template v-if="countdownInfo(ev).urgent">{{ countdownInfo(ev).label }}</template>
+                <template v-else><span class="num">{{ countdownInfo(ev).days }}</span> 天後</template>
+              </span>
               <span v-if="ev.venue">📍 {{ ev.venue }}</span>
               <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict-flag">⚠ {{ eventsStore.conflictMap.get(ev.id).length }} 場衝突</span>
               <span class="status-inline">· {{ statusLabel(ev.status) }}</span>

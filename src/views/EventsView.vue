@@ -9,6 +9,7 @@ import IdolChip from '../components/IdolChip.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
+import { countdownInfo } from '../lib/countdown.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,6 +109,10 @@ watch(() => route.query.import, checkImportQuery)
             <span v-if="ev.timeUnknown" class="time">{{ formatInTz(ev.startAt, ev.timezone).split(' ')[0] }} ・ 時間待確認</span>
             <span v-else class="time">{{ formatInTz(ev.startAt, ev.timezone) }}</span>
             <span class="tz">{{ tzCodeOf(ev.timezone) }}</span>
+            <span v-if="countdownInfo(ev)" class="countdown" :class="{ urgent: countdownInfo(ev).urgent }">
+              <template v-if="countdownInfo(ev).urgent">{{ countdownInfo(ev).label }}</template>
+              <template v-else><span class="num">{{ countdownInfo(ev).days }}</span> 天後</template>
+            </span>
           </div>
           <div v-if="ev.venue || ev.ticketPrice != null" class="meta-row">
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>

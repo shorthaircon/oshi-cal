@@ -11,6 +11,60 @@ button { font: inherit; cursor: pointer; }
 
 /* Mobile body padding handled per-view; keep root clean */
 
+/* Countdown badges (today/tomorrow = berry, 2+ days = light outline) */
+.countdown {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .2rem;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+  font-family: var(--font-jp);
+  font-size: .72rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--paper);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+.countdown .num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: .82rem;
+  font-weight: 700;
+}
+.countdown.urgent {
+  background: var(--berry);
+  color: #fff;
+  border-color: var(--berry);
+}
+
+.countdown-big {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .35rem;
+  padding: .35rem 1.1rem;
+  border-radius: 999px;
+  font-family: var(--font-jp);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+.countdown-big .num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+.countdown-big.urgent {
+  background: var(--berry);
+  color: #fff;
+  border-color: var(--berry);
+}
+
 /* Inner-page header compaction on mobile (US-009).
  * Hides eyebrow & shrinks page title to free vertical space for content. */
 @media (max-width: 600px) {

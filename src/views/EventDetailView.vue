@@ -8,6 +8,7 @@ import { tzCodeOf } from '../lib/timezones.js'
 import EventForm from '../components/EventForm.vue'
 import IdolChip from '../components/IdolChip.vue'
 import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
+import { countdownInfo } from '../lib/countdown.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +33,7 @@ const isPast = computed(() => {
   if (!event.value?.startAt) return false
   return new Date(event.value.startAt).getTime() < Date.now()
 })
+const countdown = computed(() => countdownInfo(event.value))
 
 function goBack() {
   if (window.history.length > 1) router.back()
@@ -107,6 +109,12 @@ function exportIcs() {
           {{ event.title }}
           <span v-if="isPast" class="past-tag">已過</span>
         </h1>
+        <div v-if="countdown" class="countdown-wrap">
+          <span class="countdown-big" :class="{ urgent: countdown.urgent }">
+            <template v-if="countdown.urgent">{{ countdown.label }}</template>
+            <template v-else><span class="num">{{ countdown.days }}</span> 天後</template>
+          </span>
+        </div>
 
         <div v-if="conflicts.length" class="conflict-box">
           <strong>⚠ 時間衝突 · {{ conflicts.length }} 場</strong>
@@ -264,12 +272,22 @@ function exportIcs() {
   font-family: var(--font-jp);
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 0 0 1rem;
+  margin: 0 0 .65rem;
   color: var(--ink);
   text-align: center;
-  padding: 0 .5rem .85rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0 .5rem;
   line-height: 1.4;
+}
+.title:last-child {
+  margin-bottom: 1rem;
+  padding-bottom: .85rem;
+  border-bottom: 1px solid var(--line);
+}
+.countdown-wrap {
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1rem;
 }
 .past-tag {
   font-size: .65rem; padding: .15rem .55rem;
