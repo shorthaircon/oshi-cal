@@ -5,20 +5,20 @@ import { useIdolsStore } from '../stores/idols.js'
 import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
 import { readableTextOn } from '../lib/colors.js'
-import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
 import EmptyState from '../components/EmptyState.vue'
 import CalendarSegment from '../components/CalendarSegment.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+function goDetail(ev) {
+  router.push({ name: 'event-detail', params: { id: ev.id } })
+}
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 
 const showPast = ref({})
-const selected = ref(null)
-
-const liveSelected = computed(() =>
-  selected.value ? eventsStore.byId(selected.value.id) : null
-)
 
 const groups = computed(() => {
   return idolsStore.idols.map(idol => {
@@ -62,8 +62,6 @@ function countdownLabel(ev) {
 
     <EmptyState v-if="eventsStore.events.length === 0" />
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
-
     <div v-for="g in groups" :key="g.idol.id" class="group">
       <header class="g-head" :style="{ background: g.idol.color, color: readableTextOn(g.idol.color) }">
         <span class="name">{{ g.idol.name }}</span>
@@ -77,7 +75,7 @@ function countdownLabel(ev) {
           v-for="ev in g.future"
           :key="ev.id"
           class="g-card"
-          @click="selected = ev"
+          @click="goDetail(ev)"
         >
           <div class="line1">
             <span class="time">{{ ev.timeUnknown ? `${formatInTz(ev.startAt, ev.timezone).split(' ')[0]} ・ 時間待確認` : formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
@@ -101,7 +99,7 @@ function countdownLabel(ev) {
             v-for="ev in g.past"
             :key="ev.id"
             class="g-card past"
-            @click="selected = ev"
+            @click="goDetail(ev)"
           >
             <div class="line1">
               <span class="time">{{ ev.timeUnknown ? `${formatInTz(ev.startAt, ev.timezone).split(' ')[0]} ・ 時間待確認` : formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>

@@ -4,10 +4,15 @@ import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { formatTimeInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
-import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
 import EmptyState from '../components/EmptyState.vue'
 import CalendarSegment from '../components/CalendarSegment.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+function goDetail(ev) {
+  router.push({ name: 'event-detail', params: { id: ev.id } })
+}
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
@@ -45,10 +50,6 @@ function statusLabel(v) {
   return STATUSES.find(s => s.value === v)?.label ?? v
 }
 function isPastKey(k) { return k < todayKey }
-const selected = ref(null)
-const liveSelected = computed(() =>
-  selected.value ? eventsStore.byId(selected.value.id) : null
-)
 function dayLabel(key) {
   const [y, m, d] = key.split('-').map(Number)
   const dow = ['日','一','二','三','四','五','六'][new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
@@ -83,11 +84,9 @@ function dayPart(ev) {
       <template v-else>沒有任何活動。</template>
     </p>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
-
     <div v-for="[key, list] in grouped" :key="key" class="day">
       <ul class="agenda-list">
-        <li v-for="ev in list" :key="ev.id" class="agenda-row" :class="{ past: isPastKey(dateKeyInTz(ev.startAt, ev.timezone)) }" @click="selected = ev">
+        <li v-for="ev in list" :key="ev.id" class="agenda-row" :class="{ past: isPastKey(dateKeyInTz(ev.startAt, ev.timezone)) }" @click="goDetail(ev)">
           <div class="when">
             <span class="day">{{ dayPart(ev).day }}</span>
             <span class="month">{{ dayPart(ev).month }}</span>

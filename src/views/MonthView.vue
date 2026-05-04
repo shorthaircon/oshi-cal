@@ -4,10 +4,15 @@ import { useEventsStore } from '../stores/events.js'
 import { buildMonthGrid, shiftMonth, WEEK_LABELS_ZH } from '../lib/calendar.js'
 import { dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import EventCard from '../components/EventCard.vue'
-import EventDetailModal from '../components/EventDetailModal.vue'
 import Ribbon from '../components/Ribbon.vue'
 import EmptyState from '../components/EmptyState.vue'
 import CalendarSegment from '../components/CalendarSegment.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+function goDetail(ev) {
+  router.push({ name: 'event-detail', params: { id: ev.id } })
+}
 
 const eventsStore = useEventsStore()
 
@@ -62,10 +67,6 @@ const monthOshiCount = computed(() => {
   return set.size
 })
 
-const selected = ref(null)
-const liveSelected = computed(() =>
-  selected.value ? eventsStore.byId(selected.value.id) : null
-)
 </script>
 
 <template>
@@ -113,12 +114,10 @@ const liveSelected = computed(() =>
           :key="ev.id"
           :event="ev"
           :compact="true"
-          @select="selected = $event"
+          @select="goDetail($event)"
         />
       </div>
     </div>
-
-    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
   </section>
 </template>

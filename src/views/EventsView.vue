@@ -5,7 +5,6 @@ import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import EventForm from '../components/EventForm.vue'
 import ImportEventPanel from '../components/ImportEventPanel.vue'
-import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { formatInTz } from '../lib/time.js'
@@ -17,10 +16,10 @@ const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 const mode = ref('list')
 const fallbackInitial = ref(null)
-const selected = ref(null)
-const liveSelected = computed(() =>
-  selected.value ? eventsStore.byId(selected.value.id) : null
-)
+
+function goDetail(ev) {
+  router.push({ name: 'event-detail', params: { id: ev.id } })
+}
 
 const sorted = computed(() => {
   const all = eventsStore.events.filter(ev => ev.startAt)
@@ -99,7 +98,7 @@ watch(() => route.query.import, checkImportQuery)
     <div v-if="mode === 'list'">
       <EmptyState v-if="sorted.length === 0" />
       <ul v-else class="agenda-list">
-        <li v-for="ev in sorted" :key="ev.id" class="agenda-row" :class="{ past: isPast(ev) }" @click="selected = ev">
+        <li v-for="ev in sorted" :key="ev.id" class="agenda-row" :class="{ past: isPast(ev) }" @click="goDetail(ev)">
           <span class="status-pill abs-tr" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
           <div class="title-row">
             <strong class="title">{{ ev.title }}</strong>
@@ -131,7 +130,6 @@ watch(() => route.query.import, checkImportQuery)
       />
     </div>
 
-    <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
   </section>
 </template>
 
