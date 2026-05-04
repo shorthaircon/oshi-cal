@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { loadAll, saveAll } from '../lib/storage.js'
 import { findConflicts } from '../lib/conflictResolver.js'
+import { uuid } from '../lib/uuid.js'
 
 export const STATUSES = [
   { value: 'going', label: '預定參加' },
@@ -12,7 +13,7 @@ export const STATUSES = [
 
 function emptyEvent() {
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     idolIds: [],
     title: '',
     startAt: null,
@@ -20,6 +21,7 @@ function emptyEvent() {
     venue: '',
     sourceUrl: null,
     status: 'going',
+    timeUnknown: false,
     ticketPrice: null,
     ticketUrl: '',
     notes: '',
@@ -49,7 +51,7 @@ export const useEventsStore = defineStore('events', {
 
   actions: {
     add(payload) {
-      const event = { ...emptyEvent(), ...payload, id: crypto.randomUUID() }
+      const event = { ...emptyEvent(), ...payload, id: uuid() }
       this.events.push(event)
       this._persist()
       return event

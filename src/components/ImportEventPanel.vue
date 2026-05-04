@@ -94,6 +94,21 @@ function setError(msg) {
   errorMsg.value = msg
 }
 
+async function pasteFromClipboard() {
+  errorMsg.value = ''
+  if (!navigator.clipboard?.readText) {
+    return setError('此瀏覽器不支援讀取剪貼簿，請手動貼上')
+  }
+  try {
+    const text = (await navigator.clipboard.readText()).trim()
+    if (!text) return setError('剪貼簿是空的')
+    url.value = text
+    status.value = 'idle'
+  } catch (e) {
+    setError(`無法讀取剪貼簿：${e.message || '已被拒絕'}`)
+  }
+}
+
 function resolveIdolIds(idolSelections) {
   const idolIds = []
   for (const s of idolSelections) {
@@ -118,6 +133,7 @@ function confirmImport() {
     venue: parsed.value.venue ?? '',
     sourceUrl: parsed.value.sourceUrl,
     timezone: parsed.value.timezone,
+    timeUnknown: !!parsed.value.timeUnknown,
     idolIds: resolveIdolIds(selections.value),
     status: 'going',
   })
@@ -134,6 +150,7 @@ function confirmBatchImport() {
       venue: item.event.venue ?? '',
       sourceUrl: item.event.sourceUrl,
       timezone: item.event.timezone,
+      timeUnknown: !!item.event.timeUnknown,
       idolIds: resolveIdolIds(item.idolSelections),
       status: 'going',
     })
@@ -154,10 +171,17 @@ function fmt(iso, tz) {
       <input
         v-model="url"
         type="url"
-        placeholder="https://www.eventernote.com/events/123456"
+        placeholder="貼上 Eventernote 活動頁網址"
         :disabled="status === 'loading'"
         @keyup.enter="go"
       />
+      <button
+        type="button"
+        class="ghost paste-btn"
+        @click="pasteFromClipboard"
+        :disabled="status === 'loading'"
+        title="從剪貼簿貼上"
+      >📋 貼上</button>
       <button @click="go" :disabled="status === 'loading' || !url.trim()">
         {{ status === 'loading' ? '抓取中…' : '解析' }}
       </button>
@@ -181,7 +205,12 @@ function fmt(iso, tz) {
             <div class="batch-meta">
               <div class="batch-title">{{ item.event.title }}</div>
               <div class="batch-sub">
-                {{ fmt(item.event.startAt, item.event.timezone) }} {{ tzCodeOf(item.event.timezone) }}
+                <template v-if="item.event.timeUnknown">
+                  {{ fmt(item.event.startAt, item.event.timezone).split(' ')[0] }} ・ 時間待確認 {{ tzCodeOf(item.event.timezone) }}
+                </template>
+                <template v-else>
+                  {{ fmt(item.event.startAt, item.event.timezone) }} {{ tzCodeOf(item.event.timezone) }}
+                </template>
                 <span v-if="item.event.venue"> · {{ item.event.venue }}</span>
               </div>
             </div>
@@ -217,8 +246,14 @@ function fmt(iso, tz) {
       </p>
       <dl>
         <dt>標題</dt><dd>{{ parsed.title }}</dd>
-        <dt>開始</dt><dd>{{ fmt(parsed.startAt, parsed.timezone) }} <span class="muted">{{ tzCodeOf(parsed.timezone) }}</span></dd>
-        <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt, parsed.timezone) : '（未提供）' }}</dd>
+        <template v-if="parsed.timeUnknown">
+          <dt>日期</dt><dd>{{ fmt(parsed.startAt, parsed.timezone).split(' ')[0] }} <span class="muted">{{ tzCodeOf(parsed.timezone) }}</span></dd>
+          <dt>時間</dt><dd><span class="time-tbd">時間待確認</span> <span class="muted">（Eventernote 頁面未公布）</span></dd>
+        </template>
+        <template v-else>
+          <dt>開始</dt><dd>{{ fmt(parsed.startAt, parsed.timezone) }} <span class="muted">{{ tzCodeOf(parsed.timezone) }}</span></dd>
+          <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt, parsed.timezone) : '（未提供）' }}</dd>
+        </template>
         <dt>地點</dt><dd>{{ parsed.venue || '（未提供）' }}</dd>
         <dt>推し</dt>
         <dd>
@@ -305,6 +340,14 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   font-family: var(--font-jp);
 }
 .warn { color: #b45309; font-size: .85rem; font-family: var(--font-jp); }
+.time-tbd {
+  font-family: var(--font-jp); font-weight: 500;
+  color: var(--berry);
+  background: #fef0c7;
+  padding: .1rem .5rem;
+  border-radius: 4px;
+  font-size: .85rem;
+}
 .preview { margin-top: 1rem; }
 
 dl {

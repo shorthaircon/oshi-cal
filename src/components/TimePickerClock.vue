@@ -109,7 +109,12 @@ function confirm() {
   <Teleport to="body">
     <div v-if="open" class="clock-bg" @click.self="emit('close')">
       <div class="clock-dialog" role="dialog" aria-modal="true">
+        <div class="drag-handle" aria-hidden="true"></div>
         <p class="clock-caption">— Pick a time —</p>
+        <p class="stage-hint">
+          <span class="step">Step {{ stage === 'hour' ? 1 : 2 }} / 2</span>
+          <span class="step-label">{{ stage === 'hour' ? '選擇小時' : '選擇分鐘' }}</span>
+        </p>
         <div class="clock-display">
           <button
             type="button" class="clock-bignum"
@@ -176,6 +181,7 @@ function confirm() {
   background: rgba(59, 31, 43, 0.55);
   display: flex; align-items: center; justify-content: center;
   z-index: 200; padding: 1rem;
+  animation: fade-in .2s ease;
 }
 .clock-dialog {
   background: var(--paper); color: var(--ink);
@@ -184,8 +190,9 @@ function confirm() {
   padding: 1.25rem;
   max-width: 360px; width: 100%;
 }
+.drag-handle { display: none; }
 .clock-caption {
-  margin: 0 0 1rem;
+  margin: 0 0 .35rem;
   font-family: var(--font-nav);
   font-size: .7rem;
   letter-spacing: .25em;
@@ -193,6 +200,61 @@ function confirm() {
   text-transform: uppercase;
   font-weight: 500;
   text-align: center;
+}
+.stage-hint {
+  margin: 0 0 1rem;
+  text-align: center;
+  font-family: var(--font-jp);
+  font-size: .85rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: center;
+  gap: .5rem;
+  align-items: baseline;
+}
+.stage-hint .step {
+  font-family: var(--font-nav);
+  font-size: .65rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.stage-hint .step-label {
+  font-weight: 500;
+  color: var(--ink);
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock-bg, .clock-dialog { animation: none !important; }
+}
+
+@media (max-width: 600px) {
+  .clock-bg {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .clock-dialog {
+    width: 100%;
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+    padding: .75rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 2rem);
+    animation: slide-up .25s cubic-bezier(.2,.8,.2,1);
+  }
+  .drag-handle {
+    display: block;
+    width: 40px; height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    margin: 0 auto .65rem;
+  }
 }
 .clock-display {
   display: flex; align-items: center; justify-content: center;

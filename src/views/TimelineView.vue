@@ -6,6 +6,8 @@ import { formatTimeInTz, dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
+import EmptyState from '../components/EmptyState.vue'
+import CalendarSegment from '../components/CalendarSegment.vue'
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
@@ -14,11 +16,16 @@ const showPast = ref(false)
 const todayKey = deviceTodayKey()
 
 const sorted = computed(() => {
-  const list = eventsStore.events.filter(ev => {
-    if (!ev.startAt) return false
-    return showPast.value || new Date(ev.startAt).getTime() >= Date.now()
-  })
-  return list.sort((a, b) => (a.startAt ?? '').localeCompare(b.startAt ?? ''))
+  const all = eventsStore.events.filter(ev => ev.startAt)
+  const now = Date.now()
+  const future = all
+    .filter(ev => new Date(ev.startAt).getTime() >= now)
+    .sort((a, b) => a.startAt.localeCompare(b.startAt))
+  if (!showPast.value) return future
+  const past = all
+    .filter(ev => new Date(ev.startAt).getTime() < now)
+    .sort((a, b) => b.startAt.localeCompare(a.startAt))
+  return [...future, ...past]
 })
 
 const grouped = computed(() => {
@@ -57,6 +64,7 @@ function dayPart(ev) {
 
 <template>
   <section class="view-timeline">
+    <div class="seg-wrap"><CalendarSegment /></div>
     <header class="timeline-head">
       <div class="brand-mark">— Forthcoming Engagements —</div>
       <h2 class="t-h2">時間軸</h2>
@@ -67,11 +75,9 @@ function dayPart(ev) {
       </label>
     </header>
 
-    <p v-if="sorted.length === 0" class="empty">
-      <template v-if="eventsStore.events.length === 0">
-        還沒有活動。<router-link to="/events">去新增</router-link>。
-      </template>
-      <template v-else-if="!showPast">
+    <EmptyState v-if="eventsStore.events.length === 0" />
+    <p v-else-if="sorted.length === 0" class="empty">
+      <template v-if="!showPast">
         沒有未來活動。打開上方 toggle 看過去的。
       </template>
       <template v-else>沒有任何活動。</template>
@@ -81,11 +87,11 @@ function dayPart(ev) {
 
     <div v-for="[key, list] in grouped" :key="key" class="day">
       <ul class="agenda-list">
-        <li v-for="ev in list" :key="ev.id" class="agenda-row" @click="selected = ev">
+        <li v-for="ev in list" :key="ev.id" class="agenda-row" :class="{ past: isPastKey(dateKeyInTz(ev.startAt, ev.timezone)) }" @click="selected = ev">
           <div class="when">
             <span class="day">{{ dayPart(ev).day }}</span>
             <span class="month">{{ dayPart(ev).month }}</span>
-            <span class="time">{{ formatTimeInTz(ev.startAt, ev.timezone) }} {{ tzCodeOf(ev.timezone) }}</span>
+            <span class="time">{{ ev.timeUnknown ? 'TBD' : formatTimeInTz(ev.startAt, ev.timezone) }} {{ tzCodeOf(ev.timezone) }}</span>
           </div>
           <div class="title">
             {{ ev.title }}
@@ -107,6 +113,7 @@ function dayPart(ev) {
 
 <style scoped>
 .view-timeline { text-align: left; }
+.seg-wrap { display: flex; justify-content: center; }
 .timeline-head {
   text-align: center;
   margin-bottom: 1.5rem;
@@ -207,6 +214,12 @@ function dayPart(ev) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(231, 86, 143, 0.15);
 }
+.agenda-row.past {
+  opacity: .55;
+  background: transparent;
+  border-color: var(--line-soft);
+}
+.agenda-row.past:hover { opacity: .8; }
 .agenda-row .when {
   text-align: center;
   padding: .4rem .25rem;

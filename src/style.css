@@ -10,3 +10,18 @@ a:hover { text-decoration: underline; }
 button { font: inherit; cursor: pointer; }
 
 /* Mobile body padding handled per-view; keep root clean */
+
+/* Inner-page header compaction on mobile (US-009).
+ * Hides eyebrow & shrinks page title to free vertical space for content. */
+@media (max-width: 600px) {
+  .page-head {
+    margin-bottom: .85rem !important;
+    padding-bottom: .55rem !important;
+  }
+  .page-head .brand-mark { display: none !important; }
+  .page-head .t-h2 {
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    letter-spacing: .12em !important;
+  }
+}

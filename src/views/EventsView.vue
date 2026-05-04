@@ -1,14 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore, STATUSES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import EventForm from '../components/EventForm.vue'
 import ImportEventPanel from '../components/ImportEventPanel.vue'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
+import EmptyState from '../components/EmptyState.vue'
 import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
 
+const route = useRoute()
+const router = useRouter()
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
 const mode = ref('list')
@@ -18,13 +22,17 @@ const liveSelected = computed(() =>
   selected.value ? eventsStore.byId(selected.value.id) : null
 )
 
-const sorted = computed(() =>
-  [...eventsStore.events].sort((a, b) => {
-    const ax = a.startAt ?? ''
-    const bx = b.startAt ?? ''
-    return bx.localeCompare(ax)
-  })
-)
+const sorted = computed(() => {
+  const all = eventsStore.events.filter(ev => ev.startAt)
+  const now = Date.now()
+  const future = all
+    .filter(ev => new Date(ev.startAt).getTime() >= now)
+    .sort((a, b) => a.startAt.localeCompare(b.startAt))
+  const past = all
+    .filter(ev => new Date(ev.startAt).getTime() < now)
+    .sort((a, b) => b.startAt.localeCompare(a.startAt))
+  return [...future, ...past]
+})
 
 function startAdd() { fallbackInitial.value = null; mode.value = 'add' }
 function startImport() { mode.value = 'import' }
@@ -53,6 +61,19 @@ function statusLabel(v) {
 function idolsOf(ev) {
   return ev.idolIds.map(id => idolsStore.byId(id)).filter(Boolean)
 }
+function isPast(ev) {
+  if (!ev.startAt) return false
+  return new Date(ev.startAt).getTime() < Date.now()
+}
+
+function checkImportQuery() {
+  if (route.query.import === '1') {
+    mode.value = 'import'
+    router.replace({ path: '/events', query: {} })
+  }
+}
+onMounted(checkImportQuery)
+watch(() => route.query.import, checkImportQuery)
 </script>
 
 <template>
@@ -61,8 +82,10 @@ function idolsOf(ev) {
       <div class="brand-mark">— Events —</div>
       <h2 class="t-h2">活動</h2>
       <div v-if="mode === 'list'" class="head-actions">
-        <button class="btn-ghost" @click="startImport">貼 URL 匯入</button>
-        <button class="btn-solid" @click="startAdd">+ 新增</button>
+        <button class="btn-solid" @click="startImport">
+          貼 URL 匯入<span class="btn-sub">・Eventernote</span>
+        </button>
+        <button class="btn-ghost" @click="startAdd">+ 新增</button>
       </div>
     </header>
 
@@ -74,28 +97,26 @@ function idolsOf(ev) {
     />
 
     <div v-if="mode === 'list'">
-      <p v-if="sorted.length === 0" class="empty">
-        還沒有任何活動。按右上「+ 新增」開始。
-      </p>
+      <EmptyState v-if="sorted.length === 0" />
       <ul v-else class="agenda-list">
-        <li v-for="ev in sorted" :key="ev.id" class="agenda-row" @click="selected = ev">
-          <div class="line1">
+        <li v-for="ev in sorted" :key="ev.id" class="agenda-row" :class="{ past: isPast(ev) }" @click="selected = ev">
+          <span class="status-pill abs-tr" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
+          <div class="title-row">
             <strong class="title">{{ ev.title }}</strong>
-            <span class="status-pill" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
+            <span v-if="ev.notes" class="notes-inline">・ {{ ev.notes }}</span>
           </div>
-          <div class="line2">
-            <span class="time">🕐 {{ formatInTz(ev.startAt, ev.timezone) }}{{ ev.endAt ? ` ~ ${formatInTz(ev.endAt, ev.timezone)}` : '' }}</span>
+          <div class="info-row">
+            <span v-if="ev.timeUnknown" class="time">{{ formatInTz(ev.startAt, ev.timezone).split(' ')[0] }} ・ 時間待確認</span>
+            <span v-else class="time">{{ formatInTz(ev.startAt, ev.timezone) }}</span>
             <span class="tz">{{ tzCodeOf(ev.timezone) }}</span>
+          </div>
+          <div v-if="ev.venue || ev.ticketPrice != null" class="meta-row">
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
+            <span v-if="ev.ticketPrice != null" class="price">¥{{ ev.ticketPrice.toLocaleString() }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">
             <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
           </div>
-          <div v-if="ev.ticketPrice != null || ev.ticketUrl" class="meta">
-            <span v-if="ev.ticketPrice != null" class="num">¥{{ ev.ticketPrice.toLocaleString() }}</span>
-            <a v-if="ev.ticketUrl" :href="ev.ticketUrl" target="_blank" rel="noopener" @click.stop>購票</a>
-          </div>
-          <p v-if="ev.notes" class="notes">{{ ev.notes }}</p>
         </li>
       </ul>
     </div>
@@ -146,17 +167,26 @@ function idolsOf(ev) {
 .btn-solid {
   background: var(--ink); color: #fff;
   border: 2px solid var(--ink);
-  padding: .55rem 1.2rem;
+  padding: .75rem 1.2rem;
+  min-height: 44px;
   font-family: var(--font-body);
   font-size: .9rem; font-weight: 500;
   cursor: pointer; border-radius: 6px;
   transition: all .2s; white-space: nowrap;
 }
 .btn-solid:hover { background: var(--berry); border-color: var(--berry); }
+.btn-sub {
+  font-size: .72rem;
+  font-weight: 400;
+  opacity: .8;
+  margin-left: .15rem;
+  letter-spacing: .02em;
+}
 .btn-ghost {
   background: transparent; color: var(--ink-soft);
   border: 1px solid var(--line);
-  padding: .55rem 1.2rem;
+  padding: .75rem 1.2rem;
+  min-height: 44px;
   font-family: var(--font-body); font-size: .9rem;
   cursor: pointer; border-radius: 6px;
   white-space: nowrap;
@@ -172,61 +202,109 @@ function idolsOf(ev) {
 .agenda-list {
   list-style: none;
   padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: .85rem;
+  display: flex; flex-direction: column; gap: .6rem;
 }
 .agenda-row {
+  position: relative;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: .9rem 1.1rem;
+  padding: .65rem .85rem;
+  padding-right: 5.5rem; /* room for absolute status pill */
   cursor: pointer;
-  display: flex; flex-direction: column; gap: .35rem;
+  display: flex; flex-direction: column; gap: .3rem;
   transition: transform .15s, box-shadow .15s;
 }
 .agenda-row:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(231, 86, 143, 0.15);
 }
-.line1 {
+.agenda-row.past {
+  opacity: .55;
+  background: transparent;
+  border-color: var(--line-soft);
+}
+.agenda-row.past:hover { opacity: .8; }
+.title-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .5rem;
+  align-items: baseline;
+  gap: .25rem;
+  min-width: 0;
 }
 .title {
   font-family: var(--font-jp);
   font-size: .95rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ink);
-  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
-.line2 {
+.notes-inline {
+  font-family: var(--font-jp);
+  font-size: .78rem;
+  color: var(--ink-faint);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 45%;
+}
+.info-row {
   display: flex;
   flex-wrap: wrap;
-  gap: .75rem;
-  font-size: .82rem;
+  gap: .55rem;
+  font-size: .78rem;
   color: var(--ink-soft);
   align-items: baseline;
-}
-.time {
   font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
 }
-.tz {
+.info-row .time { font-weight: 500; }
+.info-row .tz {
   font-family: var(--font-nav);
   font-size: .65rem;
   letter-spacing: .1em;
   color: var(--ink-faint);
 }
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  font-size: .78rem;
+  color: var(--ink-soft);
+  align-items: baseline;
+}
+.meta-row .venue { font-family: var(--font-jp); }
+.meta-row .price {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 500;
+}
+.meta-row .venue + .price::before {
+  content: '・';
+  margin-right: .35rem;
+  color: var(--ink-faint);
+}
 .status-pill {
   display: inline-flex;
   align-items: center;
-  padding: .15rem .65rem;
+  padding: .15rem .55rem;
   border-radius: 999px;
   font-family: var(--font-jp);
-  font-size: .75rem;
+  font-size: .72rem;
   font-weight: 500;
   border: 1px solid rgba(0,0,0,0.12);
+  white-space: nowrap;
+}
+.status-pill.abs-tr {
+  position: absolute;
+  top: .55rem;
+  right: .65rem;
 }
 .s-going    { background: var(--status-going);    color: var(--status-going-fg); }
 .s-waitlist { background: var(--status-waitlist); color: var(--status-waitlist-fg); }
@@ -236,26 +314,7 @@ function idolsOf(ev) {
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: .35rem;
-}
-.meta {
-  display: flex;
-  gap: 1rem;
-  font-family: var(--font-body);
-  font-size: .82rem;
-  color: var(--ink-soft);
-}
-.meta .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
-.meta a { color: var(--berry); }
-.notes {
-  margin: .35rem 0 0;
-  font-size: .82rem;
-  color: var(--ink-soft);
-  white-space: pre-wrap;
-  background: var(--paper);
-  padding: .35rem .55rem;
-  border-radius: 4px;
-  border: 1px solid var(--line-soft);
+  gap: .3rem;
 }
 
 .form-stage {

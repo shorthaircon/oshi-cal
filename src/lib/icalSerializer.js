@@ -14,10 +14,45 @@ function toUtcArray(iso) {
   ]
 }
 
+function toLocalDateArray(iso, tz) {
+  const d = new Date(iso)
+  if (isNaN(d)) return null
+  // Convert to the event's local date (so all-day events land on the right calendar day)
+  const offsetMs = (tz ? tzOffsetMin(tz) : 0) * 60 * 1000
+  const local = new Date(d.getTime() + offsetMs)
+  return [local.getUTCFullYear(), local.getUTCMonth() + 1, local.getUTCDate()]
+}
+
+function tzOffsetMin(tz) {
+  // lazy-compute offset; mirrors timezones.js logic
+  try {
+    const dtf = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
+    const parts = dtf.formatToParts(new Date())
+    const off = parts.find(p => p.type === 'timeZoneName')?.value || 'GMT+0'
+    const m = off.match(/GMT([+-]\d+)(?::(\d+))?/)
+    if (!m) return 0
+    return Number(m[1]) * 60 + (Number(m[2]) || 0)
+  } catch { return 0 }
+}
+
 function eventToIcs(ev) {
   if (!ev.startAt) return null
   const start = new Date(ev.startAt)
   if (isNaN(start)) return null
+
+  if (ev.timeUnknown) {
+    // All-day event: 3-element date array → ics emits VALUE=DATE
+    return {
+      uid: `${ev.id}@oshi-cal`,
+      title: ev.title,
+      start: toLocalDateArray(ev.startAt, ev.timezone),
+      location: ev.venue || undefined,
+      url: ev.sourceUrl || undefined,
+      description: ev.notes || undefined,
+      productId: 'oshi-cal',
+    }
+  }
+
   const endIso = ev.endAt || new Date(start.getTime() + DEFAULT_DURATION_MS).toISOString()
 
   return {

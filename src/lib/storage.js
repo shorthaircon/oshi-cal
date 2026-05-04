@@ -1,5 +1,5 @@
 const KEY = 'oshi-cal:data'
-const CURRENT_VERSION = 2
+const CURRENT_VERSION = 3
 
 const EMPTY = {
   version: CURRENT_VERSION,
@@ -53,6 +53,10 @@ function migrate(data) {
     data = migrateTo2(data)
     v = 2
   }
+  if (v < 3) {
+    data = migrateTo3(data)
+    v = 3
+  }
   return normalize({ ...data, version: CURRENT_VERSION })
 }
 
@@ -64,6 +68,23 @@ function migrateTo2(data) {
       ...ev,
       timezone: ev.timezone ?? 'Asia/Tokyo',
     })),
+  }
+}
+
+// v2 → v3: events with startAt at 00:00 local time AND endAt equal to startAt
+// are flagged timeUnknown — these were Eventernote parse failures that fell back to 0:00.
+function migrateTo3(data) {
+  return {
+    ...data,
+    events: (data.events ?? []).map(ev => {
+      if (ev.timeUnknown !== undefined) return ev
+      const looksMidnight = typeof ev.startAt === 'string' && /T00:00:00/.test(ev.startAt)
+      const sameStartEnd = ev.endAt === ev.startAt
+      if (looksMidnight && sameStartEnd) {
+        return { ...ev, timeUnknown: true }
+      }
+      return { ...ev, timeUnknown: false }
+    }),
   }
 }
 

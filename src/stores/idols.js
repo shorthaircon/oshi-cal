@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { loadAll, saveAll } from '../lib/storage.js'
+import { uuid } from '../lib/uuid.js'
 
 export const useIdolsStore = defineStore('idols', {
   state: () => {
@@ -15,7 +16,7 @@ export const useIdolsStore = defineStore('idols', {
   actions: {
     add({ name, color }) {
       const idol = {
-        id: crypto.randomUUID(),
+        id: uuid(),
         name: name.trim(),
         color,
         avatar: null,

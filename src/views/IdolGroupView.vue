@@ -7,6 +7,8 @@ import { tzCodeOf } from '../lib/timezones.js'
 import { readableTextOn } from '../lib/colors.js'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import IdolChip from '../components/IdolChip.vue'
+import EmptyState from '../components/EmptyState.vue'
+import CalendarSegment from '../components/CalendarSegment.vue'
 
 const eventsStore = useEventsStore()
 const idolsStore = useIdolsStore()
@@ -52,14 +54,13 @@ function countdownLabel(ev) {
 
 <template>
   <section class="page">
+    <div class="seg-wrap"><CalendarSegment /></div>
     <header class="page-head">
       <div class="brand-mark">— By Oshi —</div>
       <h2 class="t-h2">依推し</h2>
     </header>
 
-    <p v-if="idolsStore.idols.length === 0" class="empty">
-      還沒有推し。<router-link to="/idols">先去新增</router-link>。
-    </p>
+    <EmptyState v-if="eventsStore.events.length === 0" />
 
     <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
@@ -79,7 +80,7 @@ function countdownLabel(ev) {
           @click="selected = ev"
         >
           <div class="line1">
-            <span class="time">{{ formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
+            <span class="time">{{ ev.timeUnknown ? `${formatInTz(ev.startAt, ev.timezone).split(' ')[0]} ・ 時間待確認` : formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
             <span v-if="(eventsStore.conflictMap.get(ev.id)?.length ?? 0) > 0" class="conflict" title="時間衝突">⚠</span>
           </div>
           <strong class="title">{{ ev.title }}</strong>
@@ -103,7 +104,7 @@ function countdownLabel(ev) {
             @click="selected = ev"
           >
             <div class="line1">
-              <span class="time">{{ formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
+              <span class="time">{{ ev.timeUnknown ? `${formatInTz(ev.startAt, ev.timezone).split(' ')[0]} ・ 時間待確認` : formatInTz(ev.startAt, ev.timezone) }} <span class="tzc">{{ tzCodeOf(ev.timezone) }}</span></span>
               <span class="past-tag">已過</span>
             </div>
             <strong class="title">{{ ev.title }}</strong>
@@ -123,6 +124,7 @@ function countdownLabel(ev) {
 </template>
 
 <style scoped>
+.seg-wrap { display: flex; justify-content: center; }
 .page-head {
   text-align: center;
   margin-bottom: 1.5rem;

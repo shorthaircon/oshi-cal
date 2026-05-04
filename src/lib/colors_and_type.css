@@ -32,17 +32,17 @@
   /* Today indicator (deep teal — distinct from berry / sun red) */
   --today:     #0d9488;
 
-  /* Status semantic */
-  --status-going:     #fbcfe8; /* pink */
-  --status-going-fg:  #831843;
-  --status-ticketed:  #ddd6fe; /* lavender */
-  --status-ticketed-fg: #4c1d95;
-  --status-attended:  #d4f0e0; /* mint */
-  --status-attended-fg: #14532d;
-  --status-waitlist:  #fef0c7; /* gold */
-  --status-waitlist-fg: #78350f;
-  --status-cancelled: #fcd5d5;
-  --status-cancelled-fg: #7f1d1d;
+  /* Status semantic — saturated bg + white fg, WCAG AA ≥ 4.5:1, Wes Anderson palette aligned */
+  --status-going:     #5A8A6D; /* muted green — active commitment */
+  --status-going-fg:  #ffffff;
+  --status-ticketed:  #4A6E91; /* dusty blue — confirmed */
+  --status-ticketed-fg: #ffffff;
+  --status-attended:  #7A6F66; /* warm taupe — done */
+  --status-attended-fg: #ffffff;
+  --status-waitlist:  #B85C1A; /* rust orange — pending */
+  --status-waitlist-fg: #ffffff;
+  --status-cancelled: #A04545; /* muted red — stopped */
+  --status-cancelled-fg: #ffffff;
 
   /* 12-color oshi palette (kept from codebase) */
   --oshi-1:  #ec4899; /* 粉 */

@@ -42,6 +42,7 @@ export function parseEventernoteEvent(html, sourceUrl = null) {
     venue: venue || null,
     sourceUrl,
     timezone: tz,
+    timeUnknown: !times.start,
     idolNames: idolNames.filter(Boolean),
   }
 
@@ -193,6 +194,7 @@ export function parseEventernoteActorList(html) {
       venue: venue || null,
       sourceUrl,
       timezone: tz,
+      timeUnknown: !times.start,
       idolNames,
     })
   }

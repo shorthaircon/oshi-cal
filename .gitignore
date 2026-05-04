@@ -34,3 +34,8 @@ oshi-cal-design-system/
 .env.*
 !.env.example
 worker/
+
+# Dev artifacts
+.playwright-mcp/
+screenshots/
+圖片/

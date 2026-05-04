@@ -4,6 +4,7 @@ import { useIdolsStore } from './stores/idols.js'
 import { useEventsStore } from './stores/events.js'
 import { useMetaStore } from './stores/meta.js'
 import { needsBackup } from './lib/backupReminder.js'
+import BottomTabBar from './components/BottomTabBar.vue'
 
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
@@ -28,13 +29,13 @@ const BASE = import.meta.env.BASE_URL
         <router-link to="/" class="brand">oshi-cal</router-link>
       </div>
       <nav>
-        <router-link to="/">月曆</router-link>
-        <router-link to="/timeline">時間軸</router-link>
-        <router-link to="/by-oshi">依推し</router-link>
-        <router-link to="/events">活動</router-link>
-        <router-link to="/idols">推し</router-link>
+        <router-link to="/"><span class="label">月曆</span></router-link>
+        <router-link to="/timeline"><span class="label">時間軸</span></router-link>
+        <router-link to="/by-oshi"><span class="label">依推し</span></router-link>
+        <router-link to="/events"><span class="label">活動</span></router-link>
+        <router-link to="/idols"><span class="label">推し</span></router-link>
         <router-link to="/settings" class="settings-link">
-          設定
+          <span class="label">設定</span>
           <span v-if="showDot" class="reminder-dot" title="14 天未備份"></span>
         </router-link>
       </nav>
@@ -42,6 +43,7 @@ const BASE = import.meta.env.BASE_URL
     <main>
       <router-view />
     </main>
+    <BottomTabBar />
   </div>
 </template>
 
@@ -97,21 +99,29 @@ nav {
 nav a {
   color: var(--ink-soft);
   text-decoration: none;
-  padding-bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
 }
+nav a .label { padding-bottom: 2px; }
 nav a:hover { color: var(--berry); text-decoration: none; }
-nav a.router-link-active { color: var(--ink); border-bottom: 1px solid var(--berry); }
+nav a.router-link-active { color: var(--ink); }
+nav a.router-link-active .label { border-bottom: 1px solid var(--berry); }
 
 .settings-link { position: relative; }
 .reminder-dot {
   display: inline-block; width: 6px; height: 6px;
   background: var(--berry); border-radius: 50%;
-  position: absolute; top: -2px; right: -10px;
+  position: absolute; top: 50%; right: -2px;
+  transform: translate(0, -90%);
 }
 
 @media (max-width: 600px) {
-  nav { gap: 1rem; font-size: .65rem; }
-  .brand { font-size: 2rem; }
-  .app { padding: 1rem .75rem 3rem; }
+  .topbar nav { display: none; }
+  .topbar .brand-mark { display: none; }
+  .topbar { gap: .15rem; padding: .5rem 0 .55rem; margin-bottom: .65rem; }
+  .brand-row img { width: 26px; height: 26px; }
+  .brand { font-size: 1.45rem; }
+  .app { padding: .65rem .75rem calc(72px + env(safe-area-inset-bottom, 0)); }
 }
 </style>

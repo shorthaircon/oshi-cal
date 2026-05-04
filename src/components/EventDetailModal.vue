@@ -87,17 +87,29 @@ function exportIcs() {
           </div>
 
           <dl class="modal-dl">
-            <dt>開演</dt>
+            <dt>日期</dt>
             <dd>
-              <span class="dl-num">{{ formatDateInTz(event.startAt, event.timezone) }} {{ formatTimeInTz(event.startAt, event.timezone) }}</span>
+              <span class="dl-num">{{ formatDateInTz(event.startAt, event.timezone) }}</span>
               <span class="muted">{{ tzCodeOf(event.timezone) }}</span>
             </dd>
-            <template v-if="event.endAt">
-              <dt>終演</dt>
+            <template v-if="event.timeUnknown">
+              <dt>時間</dt>
               <dd>
-                <span class="dl-num">{{ formatDateInTz(event.endAt, event.timezone) }} {{ formatTimeInTz(event.endAt, event.timezone) }}</span>
-                <span class="muted">{{ tzCodeOf(event.timezone) }}</span>
+                <span class="time-tbd">時間待確認</span>
+                <a v-if="event.sourceUrl" :href="event.sourceUrl" target="_blank" rel="noopener" class="modal-link sm">至 Eventernote 確認 →</a>
               </dd>
+            </template>
+            <template v-else>
+              <dt>開演</dt>
+              <dd>
+                <span class="dl-num">{{ formatTimeInTz(event.startAt, event.timezone) }}</span>
+              </dd>
+              <template v-if="event.endAt">
+                <dt>終演</dt>
+                <dd>
+                  <span class="dl-num">{{ formatTimeInTz(event.endAt, event.timezone) }}</span>
+                </dd>
+              </template>
             </template>
             <dt>地點</dt>
             <dd>{{ event.venue || '—' }}</dd>
@@ -230,6 +242,15 @@ function exportIcs() {
 .modal-dl .muted { color: var(--ink-faint); margin-left: .35rem; font-size: .8rem; }
 .dd-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
 .modal-link { color: var(--berry); word-break: break-all; }
+.modal-link.sm { display: block; margin-top: .25rem; font-size: .8rem; }
+.time-tbd {
+  font-family: var(--font-jp); font-weight: 500;
+  color: var(--berry);
+  background: #fef0c7;
+  padding: .15rem .55rem;
+  border-radius: 4px;
+  font-size: .85rem;
+}
 .modal-notes {
   background: var(--bg); border: 1px solid var(--line-soft);
   border-radius: 6px; padding: .5rem .75rem;

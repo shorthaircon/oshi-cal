@@ -6,6 +6,8 @@ import { dateKeyInTz, deviceTodayKey } from '../lib/time.js'
 import EventCard from '../components/EventCard.vue'
 import EventDetailModal from '../components/EventDetailModal.vue'
 import Ribbon from '../components/Ribbon.vue'
+import EmptyState from '../components/EmptyState.vue'
+import CalendarSegment from '../components/CalendarSegment.vue'
 
 const eventsStore = useEventsStore()
 
@@ -68,6 +70,7 @@ const liveSelected = computed(() =>
 
 <template>
   <section class="view-month">
+    <div class="seg-wrap"><CalendarSegment /></div>
     <div class="month-head">
       <Ribbon>Anno {{ cursor.year }}</Ribbon>
       <h1 class="month-title">
@@ -84,6 +87,8 @@ const liveSelected = computed(() =>
         <button class="btn-frame" @click="next">{{ nextMonth }}月 ›</button>
       </div>
     </div>
+
+    <EmptyState v-if="eventsStore.events.length === 0" />
 
     <div class="weekrow">
       <div v-for="(w, i) in WEEK_LABELS_ZH" :key="i" :class="{ sun: i === 0 }">
@@ -115,13 +120,11 @@ const liveSelected = computed(() =>
 
     <EventDetailModal :event="liveSelected" @close="selected = null" @select="selected = $event" />
 
-    <p v-if="eventsStore.events.length === 0" class="empty">
-      還沒有任何活動。<router-link to="/events">先去新增第一場</router-link>。
-    </p>
   </section>
 </template>
 
 <style scoped>
+.seg-wrap { display: flex; justify-content: center; }
 .month-head { text-align: center; padding: 0 0 1.25rem; }
 .month-title {
   margin: 0.5rem 0 0;
@@ -234,7 +237,7 @@ const liveSelected = computed(() =>
 }
 .cell.today .num { color: var(--ink); font-weight: 900; }
 .cell.out { background: var(--bg); }
-.cell.out .num { color: var(--ink-faint); }
+.cell.out .num { color: var(--ink-soft); opacity: .58; }
 .cell.sun .num { color: var(--berry); }
 
 .empty {
@@ -245,8 +248,21 @@ const liveSelected = computed(() =>
 }
 
 @media (max-width: 600px) {
-  .month-num { font-size: 2.5rem; }
-  .month-suffix { font-size: 1.5rem; }
+  .seg-wrap { margin-top: 0; }
+  .seg-wrap :deep(.cal-segment) { margin-bottom: .5rem; }
+  .month-head { padding: 0 0 .65rem; }
+  .month-num { font-size: 2rem; }
+  .month-suffix { font-size: 1.25rem; }
+  .month-title { margin: .15rem 0 0; }
+  .month-frame {
+    padding: .35rem .75rem;
+    margin-top: .4rem;
+    font-size: .7rem;
+    gap: .65rem;
+  }
+  .month-nav { margin-top: .5rem; gap: .5rem; }
+  .btn-frame { padding: .3rem .7rem; font-size: .65rem; }
+  .weekrow { padding: .5rem 0; font-size: .75rem; margin-top: .5rem; }
   .cell { min-height: 4.5rem; }
 }
 </style>

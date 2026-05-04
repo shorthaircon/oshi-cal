@@ -54,7 +54,7 @@ const shortTitle = computed(() => {
 
 <template>
   <div class="ev" :class="{ past: isPast }" :style="bgStyle" @click="emit('select', event)" :title="event.title">
-    <span class="t">{{ formatTimeInTz(event.startAt, event.timezone) }}</span>
+    <span class="t">{{ event.timeUnknown ? 'TBD' : formatTimeInTz(event.startAt, event.timezone) }}</span>
     <span class="ev-title">{{ compact ? shortTitle : event.title }}</span>
     <span v-if="hasConflict" class="conflict" title="時間衝突">⚠</span>
   </div>

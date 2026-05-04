@@ -1,10 +1,13 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useIdolsStore } from '../stores/idols.js'
 import { STATUSES } from '../stores/events.js'
 import { isoToLocalInputInTz, localInputToIsoInTz } from '../lib/time.js'
 import { TZ_OPTIONS, DEFAULT_TZ, detectTimezone } from '../lib/timezones.js'
 import TimePickerClock from './TimePickerClock.vue'
+
+const router = useRouter()
 
 const props = defineProps({
   initial: { type: Object, default: null },
@@ -20,6 +23,7 @@ const startTime = ref('') // 'HH:mm' (24h JST)
 const venue = ref('')
 const timezone = ref(DEFAULT_TZ)
 const clockOpen = ref(false)
+const timeUnknown = ref(false)
 const status = ref('going')
 const ticketPrice = ref('')
 const ticketUrl = ref('')
@@ -43,6 +47,7 @@ function loadFromInitial(v) {
   ticketPrice.value = v?.ticketPrice != null ? String(v.ticketPrice) : ''
   ticketUrl.value = v?.ticketUrl ?? ''
   notes.value = v?.notes ?? ''
+  timeUnknown.value = !!v?.timeUnknown
 }
 
 // Auto-suggest timezone when venue changes (only on add, not edit)
@@ -63,16 +68,34 @@ const ampmDisplay = computed(() => {
 loadFromInitial(props.initial)
 watch(() => props.initial, loadFromInitial)
 
+const isDirty = computed(() =>
+  !!title.value.trim() ||
+  idolIds.value.length > 0 ||
+  !!startDate.value ||
+  !!venue.value.trim() ||
+  String(ticketPrice.value).trim() !== '' ||
+  !!ticketUrl.value.trim() ||
+  !!notes.value.trim()
+)
+
+function goAddIdol() {
+  if (isDirty.value && !confirm('離開將會清空已填入的欄位，確定要去新增推し嗎？')) return
+  router.push('/idols')
+}
+
 function submit() {
-  if (!title.value.trim() || !startDate.value || !startTime.value) return
+  if (!title.value.trim() || !startDate.value) return
+  if (!timeUnknown.value && !startTime.value) return
+  const effectiveTime = timeUnknown.value ? '00:00' : startTime.value
   emit('submit', {
     title: title.value.trim(),
     idolIds: idolIds.value,
     timezone: timezone.value,
-    startAt: localInputToIsoInTz(`${startDate.value}T${startTime.value}`, timezone.value),
+    startAt: localInputToIsoInTz(`${startDate.value}T${effectiveTime}`, timezone.value),
     endAt: null,
     venue: venue.value.trim(),
     status: status.value,
+    timeUnknown: timeUnknown.value,
     ticketPrice: ticketPrice.value === '' ? null : Number(ticketPrice.value),
     ticketUrl: ticketUrl.value.trim(),
     notes: notes.value,
@@ -90,7 +113,7 @@ function submit() {
     <div class="field">
       <span>推し（可多選）</span>
       <div v-if="idolsStore.idols.length === 0" class="hint">
-        還沒有推し。<router-link to="/idols">去新增</router-link>
+        還沒有推し。<button type="button" class="hint-link" @click="goAddIdol">去新增</button>
       </div>
       <div v-else class="idol-checks">
         <label v-for="i in idolsStore.idols" :key="i.id" class="chk" :class="{ on: idolIds.includes(i.id) }">
@@ -116,10 +139,19 @@ function submit() {
         <input v-model="startDate" type="date" required />
       </label>
       <div class="field">
-        <span>時間 <em>*</em></span>
-        <button type="button" class="time-btn" @click="clockOpen = true">
-          {{ ampmDisplay || '選擇時間' }}
+        <span>時間 <em v-if="!timeUnknown">*</em></span>
+        <button
+          type="button"
+          class="time-btn"
+          :disabled="timeUnknown"
+          @click="clockOpen = true"
+        >
+          {{ timeUnknown ? '時間待確認' : (ampmDisplay || '選擇時間') }}
         </button>
+        <label class="time-unknown-toggle">
+          <input type="checkbox" v-model="timeUnknown" />
+          時間待確認（未公布或未抓到）
+        </label>
       </div>
     </div>
 
@@ -201,7 +233,16 @@ function submit() {
   color: var(--ink);
   cursor: pointer;
 }
-.time-btn:hover { border-color: var(--ink); }
+.time-btn:hover:not(:disabled) { border-color: var(--ink); }
+.time-btn:disabled { background: var(--bg); color: var(--ink-faint); cursor: not-allowed; }
+.time-unknown-toggle {
+  display: inline-flex; align-items: center; gap: .35rem;
+  margin-top: .35rem;
+  font-size: .8rem; color: var(--ink-soft);
+  font-family: var(--font-jp);
+  cursor: pointer;
+}
+.time-unknown-toggle input { margin: 0; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
@@ -223,6 +264,12 @@ function submit() {
   border: 1px solid rgba(0,0,0,.15);
 }
 .hint { font-size: .9rem; color: var(--ink-faint); }
+.hint-link {
+  background: none; border: 0; padding: 0;
+  color: var(--berry); cursor: pointer;
+  font: inherit; text-decoration: underline;
+}
+.hint-link:hover { color: var(--ink); }
 
 .form-actions {
   display: flex; gap: .5rem; justify-content: flex-end;
