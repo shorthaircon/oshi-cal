@@ -1,5 +1,5 @@
 const KEY = 'oshi-cal:data'
-const CURRENT_VERSION = 3
+const CURRENT_VERSION = 4
 
 const EMPTY = {
   version: CURRENT_VERSION,
@@ -57,6 +57,10 @@ function migrate(data) {
     data = migrateTo3(data)
     v = 3
   }
+  if (v < 4) {
+    data = migrateTo4(data)
+    v = 4
+  }
   return normalize({ ...data, version: CURRENT_VERSION })
 }
 
@@ -86,6 +90,14 @@ function migrateTo3(data) {
       return { ...ev, timeUnknown: false }
     }),
   }
+}
+
+// v3 → v4: idols sorted by localeCompare(ja) as seed for manual drag-to-reorder.
+// Array position = display order from now on.
+function migrateTo4(data) {
+  const idols = Array.isArray(data.idols) ? [...data.idols] : []
+  idols.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'))
+  return { ...data, idols }
 }
 
 function normalize(data) {

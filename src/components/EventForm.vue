@@ -6,7 +6,9 @@ import { STATUSES } from '../stores/events.js'
 import { isoToLocalInputInTz, localInputToIsoInTz } from '../lib/time.js'
 import { TZ_OPTIONS, DEFAULT_TZ, detectTimezone } from '../lib/timezones.js'
 import { currencyOf } from '../lib/currency.js'
+import { readableTextOn } from '../lib/colors.js'
 import TimePickerClock from './TimePickerClock.vue'
+import IdolPickerSheet from './IdolPickerSheet.vue'
 
 const router = useRouter()
 
@@ -31,6 +33,13 @@ const ticketUrl = ref('')
 const notes = ref('')
 
 const currencyCode = computed(() => currencyOf(timezone.value).code)
+const pickerOpen = ref(false)
+const selectedIdols = computed(() =>
+  idolIds.value.map(id => idolsStore.byId(id)).filter(Boolean)
+)
+function removeIdol(id) {
+  idolIds.value = idolIds.value.filter(x => x !== id)
+}
 
 function loadFromInitial(v) {
   title.value = v?.title ?? ''
@@ -118,14 +127,27 @@ function submit() {
       <div v-if="idolsStore.idols.length === 0" class="hint">
         還沒有推し。<button type="button" class="hint-link" @click="goAddIdol">去新增</button>
       </div>
-      <div v-else class="idol-checks">
-        <label v-for="i in idolsStore.idols" :key="i.id" class="chk" :class="{ on: idolIds.includes(i.id) }">
-          <input type="checkbox" :value="i.id" v-model="idolIds" />
-          <span class="dot" :style="{ background: i.color }" />
-          {{ i.name }}
-        </label>
+      <div v-else class="picker-trigger">
+        <span
+          v-for="i in selectedIdols"
+          :key="i.id"
+          class="selected-chip"
+          :style="{ background: i.color, color: readableTextOn(i.color) }"
+        >
+          <span>{{ i.name }}</span>
+          <button type="button" class="x" @click="removeIdol(i.id)" aria-label="移除推し">×</button>
+        </span>
+        <button type="button" class="add-btn" @click="pickerOpen = true">
+          {{ selectedIdols.length === 0 ? '+ 選擇推し' : '+ 添加' }}
+        </button>
       </div>
     </div>
+
+    <IdolPickerSheet
+      v-model="idolIds"
+      v-model:open="pickerOpen"
+      :idols="idolsStore.idols"
+    />
 
     <label class="field">
       <span>時區</span>
@@ -249,23 +271,38 @@ function submit() {
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
-.idol-checks { display: flex; flex-wrap: wrap; gap: .5rem; }
-.chk {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .35rem .65rem;
+.picker-trigger {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  align-items: center;
+  padding: .55rem;
+  background: #fff;
   border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 50px;
+}
+.selected-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .25rem .35rem .25rem .65rem;
   border-radius: 999px;
-  cursor: pointer; font-size: .85rem;
-  background: #fff; font-family: var(--font-jp);
-  transition: all .2s;
+  font-family: var(--font-jp); font-size: .85rem; font-weight: 500;
+  border: 1px solid rgba(0,0,0,.18);
 }
-.chk.on { border-color: var(--berry); background: #fef0f5; }
-.chk input { margin: 0; }
-.chk .dot {
-  width: .8rem; height: .8rem;
-  border-radius: 50%;
-  border: 1px solid rgba(0,0,0,.15);
+.selected-chip .x {
+  width: 18px; height: 18px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.18); color: #fff; border: none; cursor: pointer;
+  font-size: .85rem; line-height: 1; padding: 0;
 }
+.selected-chip .x:hover { background: rgba(0,0,0,.4); }
+.add-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .4rem .85rem;
+  background: transparent; color: var(--berry);
+  border: 1px dashed var(--berry); border-radius: 999px;
+  font-family: var(--font-body); font-size: .85rem; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.add-btn:hover { background: var(--berry); color: #fff; border-style: solid; }
 .hint { font-size: .9rem; color: var(--ink-faint); }
 .hint-link {
   background: none; border: 0; padding: 0;

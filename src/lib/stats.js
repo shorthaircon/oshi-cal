@@ -32,6 +32,21 @@ export function attendedByIdol(events, idols) {
     .sort((a, b) => b.count - a.count)
 }
 
+// Top N idol ids by event count across all events (any status).
+// Used for picker's "最近用過" section.
+export function recentIdolIds(events, limit = 5) {
+  const counts = new Map()
+  for (const e of events) {
+    for (const id of (e.idolIds || [])) {
+      counts.set(id, (counts.get(id) || 0) + 1)
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id)
+}
+
 // Returns { JPY: 150000, TWD: 8800, ... } summing attended events with prices.
 export function spendingByCurrency(events) {
   const totals = {}

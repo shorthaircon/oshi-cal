@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import draggable from 'vuedraggable'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
 import IdolForm from '../components/IdolForm.vue'
@@ -44,6 +45,11 @@ function onDelete(idol) {
   const ok = confirm(`確定刪除「${idol.name}」？\n（已關聯活動：${linked} 場）`)
   if (ok) store.remove(idol.id)
 }
+
+const orderedIdols = computed({
+  get: () => store.idols,
+  set: (val) => store.setOrder(val),
+})
 </script>
 
 <template>
@@ -60,16 +66,30 @@ function onDelete(idol) {
       <p v-if="store.idols.length === 0" class="empty">
         還沒有任何推し。按右上「+ 新增」開始。
       </p>
-      <ul v-else class="idol-list">
-        <li v-for="idol in store.idols" :key="idol.id" class="idol-row">
-          <span class="dot" :style="{ background: idol.color }" />
-          <span class="name">{{ idol.name }}</span>
-          <span class="count">{{ countFor(idol.id) }} 場</span>
-          <span class="hex">{{ idol.color }}</span>
-          <button class="btn-ghost" @click="startEdit(idol.id)">編輯</button>
-          <button class="btn-ghost danger" @click="onDelete(idol)">刪除</button>
-        </li>
-      </ul>
+      <template v-else>
+      <p class="reorder-hint">長按 <span class="grip-mini">⋮⋮</span> 可拖曳重新排序，順序套用到所有選擇推し的地方。</p>
+      <draggable
+        v-model="orderedIdols"
+        item-key="id"
+        handle=".grip"
+        tag="ul"
+        class="idol-list"
+        :animation="180"
+        ghost-class="dragging-ghost"
+      >
+        <template #item="{ element: idol }">
+          <li class="idol-row">
+            <span class="grip" aria-label="拖曳重新排序">⋮⋮</span>
+            <span class="dot" :style="{ background: idol.color }" />
+            <span class="name">{{ idol.name }}</span>
+            <span class="count">{{ countFor(idol.id) }} 場</span>
+            <span class="hex">{{ idol.color }}</span>
+            <button class="btn-ghost" @click="startEdit(idol.id)">編輯</button>
+            <button class="btn-ghost danger" @click="onDelete(idol)">刪除</button>
+          </li>
+        </template>
+      </draggable>
+      </template>
     </div>
 
     <div v-else class="form-stage">
@@ -129,11 +149,40 @@ function onDelete(idol) {
   font-family: var(--font-jp);
 }
 
+.reorder-hint {
+  font-family: var(--font-jp);
+  font-size: .8rem;
+  color: var(--ink-faint);
+  text-align: center;
+  margin: 0 0 .85rem;
+}
+.grip-mini {
+  font-family: var(--font-mono);
+  color: var(--ink-soft);
+  letter-spacing: -.05em;
+}
 .idol-list {
   list-style: none;
   padding: 0; margin: 0;
   display: flex; flex-direction: column;
   gap: .55rem;
+}
+.grip {
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+  cursor: grab;
+  font-size: 1.1rem;
+  letter-spacing: -.1em;
+  padding: 0 .15rem;
+  user-select: none;
+  touch-action: none;
+}
+.grip:active { cursor: grabbing; color: var(--berry); }
+.dragging-ghost {
+  opacity: .35;
+  background: var(--paper);
+  border-color: var(--berry);
+  border-style: dashed;
 }
 .idol-row {
   display: flex;

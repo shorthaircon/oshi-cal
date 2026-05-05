@@ -45,6 +45,11 @@ export const useIdolsStore = defineStore('idols', {
       this.idols = loadAll().idols
     },
 
+    setOrder(orderedIdols) {
+      this.idols = orderedIdols
+      this._persist()
+    },
+
     _persist() {
       const data = loadAll()
       saveAll({ ...data, idols: this.idols })
