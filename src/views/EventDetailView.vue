@@ -10,6 +10,8 @@ import IdolChip from '../components/IdolChip.vue'
 import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
 import { countdownInfo } from '../lib/countdown.js'
 import { formatPrice } from '../lib/currency.js'
+import CoverThumb from '../components/CoverThumb.vue'
+import CoverPicker from '../components/CoverPicker.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,6 +60,12 @@ function onDelete() {
     goBack()
   }
 }
+const coverPickerOpen = ref(false)
+function onCoverChange(newId) {
+  if (!event.value) return
+  eventsStore.setCover(event.value.id, newId)
+}
+
 function exportIcs() {
   if (!event.value) return
   const result = serializeIcs([event.value])
@@ -105,6 +113,13 @@ function exportIcs() {
 
     <div class="detail-body">
       <div v-if="!editing">
+        <CoverThumb
+          :event="event"
+          size="lg"
+          clickable
+          class="hero"
+          @pick="coverPickerOpen = true"
+        />
         <div class="eyebrow">— Event Detail —</div>
         <h1 class="title">
           {{ event.title }}
@@ -185,6 +200,13 @@ function exportIcs() {
     </div>
   </section>
 
+  <CoverPicker
+    v-if="event"
+    v-model:open="coverPickerOpen"
+    :current-cover-id="event.coverId"
+    @change="onCoverChange"
+  />
+
   <section v-else class="not-found">
     <p>找不到這場活動</p>
     <button class="back-btn" @click="goBack">回列表</button>
@@ -193,6 +215,7 @@ function exportIcs() {
 
 <style scoped>
 .event-detail { text-align: left; }
+.hero { margin-bottom: 1rem; }
 
 .detail-toolbar {
   display: flex;

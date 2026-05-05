@@ -20,6 +20,7 @@ export function parseEventernoteEvent(html, sourceUrl = null) {
 
   const title = meta(doc, 'og:title')
   const ogDesc = meta(doc, 'og:description')
+  const coverImageUrl = meta(doc, 'og:image')
 
   const rows = extractRows(doc)
   const dateStr = rows.date ? extractDate(rows.date) : extractDateFromOg(ogDesc)
@@ -44,6 +45,7 @@ export function parseEventernoteEvent(html, sourceUrl = null) {
     timezone: tz,
     timeUnknown: !times.start,
     idolNames: idolNames.filter(Boolean),
+    coverImageUrl: coverImageUrl || null,
   }
 
   if (!partial.title || !startAt) {

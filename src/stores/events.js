@@ -2,11 +2,12 @@ import { defineStore } from 'pinia'
 import { loadAll, saveAll } from '../lib/storage.js'
 import { findConflicts } from '../lib/conflictResolver.js'
 import { uuid } from '../lib/uuid.js'
+import { deleteImage } from '../lib/imageStore.js'
 
 export const STATUSES = [
   { value: 'going', label: '預定參加' },
   { value: 'waitlist', label: '候補中' },
-  { value: 'ticketed', label: '已抽到/已購票' },
+  { value: 'ticketed', label: '已購票' },
   { value: 'attended', label: '已參加' },
   { value: 'cancelled', label: '已取消' },
 ]
@@ -27,6 +28,7 @@ function emptyEvent() {
     notes: '',
     reminder: null,
     timezone: 'Asia/Tokyo',
+    coverId: null,
   }
 }
 
@@ -67,8 +69,21 @@ export const useEventsStore = defineStore('events', {
     remove(id) {
       const idx = this.events.findIndex(e => e.id === id)
       if (idx === -1) return
+      const coverId = this.events[idx].coverId
       this.events.splice(idx, 1)
       this._persist()
+      if (coverId) deleteImage(coverId).catch(() => {})
+    },
+
+    setCover(id, newCoverId) {
+      const ev = this.events.find(e => e.id === id)
+      if (!ev) return
+      const oldCoverId = ev.coverId
+      ev.coverId = newCoverId
+      this._persist()
+      if (oldCoverId && oldCoverId !== newCoverId) {
+        deleteImage(oldCoverId).catch(() => {})
+      }
     },
 
     reload() {

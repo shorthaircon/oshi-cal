@@ -9,6 +9,8 @@ import { currencyOf } from '../lib/currency.js'
 import { readableTextOn } from '../lib/colors.js'
 import TimePickerClock from './TimePickerClock.vue'
 import IdolPickerSheet from './IdolPickerSheet.vue'
+import CoverThumb from './CoverThumb.vue'
+import CoverPicker from './CoverPicker.vue'
 
 const router = useRouter()
 
@@ -31,6 +33,8 @@ const status = ref('going')
 const ticketPrice = ref('')
 const ticketUrl = ref('')
 const notes = ref('')
+const coverId = ref(null)
+const coverPickerOpen = ref(false)
 
 const currencyCode = computed(() => currencyOf(timezone.value).code)
 const pickerOpen = ref(false)
@@ -39,6 +43,10 @@ const selectedIdols = computed(() =>
 )
 function removeIdol(id) {
   idolIds.value = idolIds.value.filter(x => x !== id)
+}
+function onPriceInput(e) {
+  const raw = e.target.value.replace(/[^0-9]/g, '')
+  ticketPrice.value = raw ? Number(raw).toLocaleString() : ''
 }
 
 function loadFromInitial(v) {
@@ -56,10 +64,11 @@ function loadFromInitial(v) {
   }
   venue.value = v?.venue ?? ''
   status.value = v?.status ?? 'going'
-  ticketPrice.value = v?.ticketPrice != null ? String(v.ticketPrice) : ''
+  ticketPrice.value = v?.ticketPrice != null ? Number(v.ticketPrice).toLocaleString() : ''
   ticketUrl.value = v?.ticketUrl ?? ''
   notes.value = v?.notes ?? ''
   timeUnknown.value = !!v?.timeUnknown
+  coverId.value = v?.coverId ?? null
 }
 
 // Auto-suggest timezone when venue changes (only on add, not edit)
@@ -108,11 +117,23 @@ function submit() {
     venue: venue.value.trim(),
     status: status.value,
     timeUnknown: timeUnknown.value,
-    ticketPrice: ticketPrice.value === '' ? null : Number(ticketPrice.value),
+    ticketPrice: ticketPrice.value === '' ? null : Number(String(ticketPrice.value).replace(/,/g, '')),
     ticketUrl: ticketUrl.value.trim(),
     notes: notes.value,
+    coverId: coverId.value,
   })
 }
+
+function onCoverChange(newId) {
+  coverId.value = newId
+}
+
+const formEvent = computed(() => ({
+  id: props.initial?.id,
+  title: title.value,
+  idolIds: idolIds.value,
+  coverId: coverId.value,
+}))
 </script>
 
 <template>
@@ -147,6 +168,22 @@ function submit() {
       v-model="idolIds"
       v-model:open="pickerOpen"
       :idols="idolsStore.idols"
+    />
+
+    <div class="field">
+      <span>封面圖</span>
+      <div class="cover-field">
+        <CoverThumb :event="formEvent" size="sm" clickable @pick="coverPickerOpen = true" />
+        <button type="button" class="cover-btn" @click="coverPickerOpen = true">
+          {{ coverId ? '更換 / 移除' : '+ 設定封面' }}
+        </button>
+      </div>
+    </div>
+
+    <CoverPicker
+      v-model:open="coverPickerOpen"
+      :current-cover-id="coverId"
+      @change="onCoverChange"
     />
 
     <label class="field">
@@ -195,7 +232,14 @@ function submit() {
     <div class="grid-2">
       <label class="field">
         <span>票價（{{ currencyCode }}）</span>
-        <input v-model="ticketPrice" type="number" min="0" step="1" inputmode="numeric" />
+        <input
+          v-model="ticketPrice"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9,]*"
+          placeholder="0"
+          @input="onPriceInput"
+        />
       </label>
       <label class="field">
         <span>購票連結</span>
@@ -303,6 +347,18 @@ function submit() {
   cursor: pointer; transition: all .15s;
 }
 .add-btn:hover { background: var(--berry); color: #fff; border-style: solid; }
+
+.cover-field {
+  display: flex; align-items: center; gap: .85rem;
+}
+.cover-btn {
+  background: transparent; color: var(--ink-soft);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: .5rem 1rem;
+  font-family: var(--font-body); font-size: .85rem;
+  cursor: pointer;
+}
+.cover-btn:hover { color: var(--ink); border-color: var(--ink); }
 .hint { font-size: .9rem; color: var(--ink-faint); }
 .hint-link {
   background: none; border: 0; padding: 0;

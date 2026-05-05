@@ -7,6 +7,9 @@ import { useEventsStore } from '../stores/events.js'
 import { recommendNext } from '../lib/colors.js'
 import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
+import { deleteImage } from '../lib/imageStore.js'
+import CoverThumb from './CoverThumb.vue'
+import CoverPicker from './CoverPicker.vue'
 
 const PROXY = import.meta.env.VITE_PROXY_URL || ''
 
@@ -28,6 +31,25 @@ const errorMsg = ref('')
 const parsed = ref(null) // single mode
 const selections = ref([]) // single mode: [{ name, existing, selected }]
 const batchItems = ref([]) // batch mode: [{ event, selected, alreadyImported, idolSelections }]
+const coverId = ref(null) // single mode: optional cover image id (set via CoverPicker)
+const coverPickerOpen = ref(false)
+
+const previewEventForThumb = computed(() => ({
+  id: '_import_preview',
+  title: parsed.value?.title || '',
+  idolIds: [],
+  coverId: coverId.value,
+}))
+
+function onCoverChange(newId) {
+  coverId.value = newId
+}
+
+function onCancel() {
+  if (coverId.value) deleteImage(coverId.value).catch(() => {})
+  coverId.value = null
+  emit('cancel')
+}
 
 function buildSelections(idolNames) {
   return idolNames.map(name => {
@@ -47,6 +69,9 @@ async function go() {
   errorMsg.value = ''
   parsed.value = null
   batchItems.value = []
+  // discard any cover the user may have set in a previous parse session
+  if (coverId.value) deleteImage(coverId.value).catch(() => {})
+  coverId.value = null
   const target = url.value.trim()
   const cls = classifyEventernoteUrl(target)
   if (cls.kind === 'invalid') return setError('請貼 Eventernote 網址')
@@ -142,7 +167,9 @@ function confirmImport() {
     timeUnknown: !!parsed.value.timeUnknown,
     idolIds: resolveIdolIds(selections.value),
     status: 'going',
+    coverId: coverId.value,
   })
+  coverId.value = null
   emit('done')
 }
 
@@ -167,6 +194,7 @@ function confirmBatchImport() {
 function fmt(iso, tz) {
   return iso ? formatInTz(iso, tz) : '—'
 }
+
 </script>
 
 <template>
@@ -191,7 +219,7 @@ function fmt(iso, tz) {
       <button @click="go" :disabled="status === 'loading' || !url.trim()">
         {{ status === 'loading' ? '抓取中…' : '解析' }}
       </button>
-      <button class="ghost" @click="emit('cancel')">取消</button>
+      <button class="ghost" @click="onCancel">取消</button>
     </div>
 
     <p v-if="errorMsg" class="err">{{ errorMsg }}</p>
@@ -242,7 +270,7 @@ function fmt(iso, tz) {
         <button @click="confirmBatchImport" :disabled="batchSelectedCount === 0">
           匯入 {{ batchSelectedCount }} 筆
         </button>
-        <button class="ghost" @click="emit('cancel')">取消</button>
+        <button class="ghost" @click="onCancel">取消</button>
       </div>
     </div>
 
@@ -261,6 +289,15 @@ function fmt(iso, tz) {
           <dt>結束</dt><dd>{{ parsed.endAt ? fmt(parsed.endAt, parsed.timezone) : '（未提供）' }}</dd>
         </template>
         <dt>地點</dt><dd>{{ parsed.venue || '（未提供）' }}</dd>
+        <dt>封面</dt>
+        <dd>
+          <div class="cover-pick">
+            <CoverThumb :event="previewEventForThumb" size="sm" clickable @pick="coverPickerOpen = true" />
+            <button type="button" class="ghost cover-btn" @click="coverPickerOpen = true">
+              {{ coverId ? '更換 / 移除' : '+ 設定封面（選填）' }}
+            </button>
+          </div>
+        </dd>
         <dt>推し</dt>
         <dd>
           <p v-if="selections.length === 0" class="muted">（未偵測到）</p>
@@ -283,9 +320,15 @@ function fmt(iso, tz) {
       </dl>
       <div class="actions">
         <button @click="confirmImport">確認匯入</button>
-        <button class="ghost" @click="emit('cancel')">取消</button>
+        <button class="ghost" @click="onCancel">取消</button>
       </div>
     </div>
+
+    <CoverPicker
+      v-model:open="coverPickerOpen"
+      :current-cover-id="coverId"
+      @change="onCoverChange"
+    />
   </div>
 </template>
 
@@ -482,4 +525,11 @@ dd {
   cursor: pointer;
 }
 .actions { display: flex; gap: .5rem; }
+.cover-pick {
+  display: flex; align-items: center; gap: .65rem;
+}
+.cover-btn {
+  padding: .45rem .85rem !important;
+  font-size: .8rem !important;
+}
 </style>

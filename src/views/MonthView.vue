@@ -3,7 +3,8 @@ import { ref, computed } from 'vue'
 import { useEventsStore } from '../stores/events.js'
 import { buildMonthGrid, shiftMonth, WEEK_LABELS_ZH } from '../lib/calendar.js'
 import { dateKeyInTz, deviceTodayKey } from '../lib/time.js'
-import EventCard from '../components/EventCard.vue'
+import CalendarDayEvents from '../components/CalendarDayEvents.vue'
+import DaySheet from '../components/DaySheet.vue'
 import Ribbon from '../components/Ribbon.vue'
 import EmptyState from '../components/EmptyState.vue'
 import CalendarSegment from '../components/CalendarSegment.vue'
@@ -12,6 +13,17 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 function goDetail(ev) {
   router.push({ name: 'event-detail', params: { id: ev.id } })
+}
+
+const daySheetOpen = ref(false)
+const daySheetEvents = ref([])
+function onDayClick(events) {
+  if (events.length === 1) {
+    goDetail(events[0])
+  } else {
+    daySheetEvents.value = events
+    daySheetOpen.value = true
+  }
 }
 
 const eventsStore = useEventsStore()
@@ -133,17 +145,20 @@ const monthOshiCount = computed(() => {
         }"
       >
         <span class="num">{{ cell.date }}</span>
-        <EventCard
-          v-for="ev in (eventsByDay.get(cell.key) ?? [])"
-          :key="ev.id"
-          :event="ev"
-          :compact="true"
-          @select="goDetail($event)"
+        <CalendarDayEvents
+          v-if="(eventsByDay.get(cell.key) ?? []).length"
+          :events="eventsByDay.get(cell.key)"
+          @open-day="onDayClick"
         />
       </div>
     </div>
     </div>
 
+    <DaySheet
+      v-model:open="daySheetOpen"
+      :events="daySheetEvents"
+      @select="goDetail"
+    />
   </section>
 </template>
 

@@ -11,6 +11,7 @@ import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
 import { countdownInfo } from '../lib/countdown.js'
 import { formatPrice } from '../lib/currency.js'
+import CoverThumb from '../components/CoverThumb.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,26 +125,31 @@ watch(() => route.query.import, checkImportQuery)
       </p>
       <ul v-else class="agenda-list">
         <li v-for="ev in sorted" :key="ev.id" class="agenda-row" :class="{ past: isPast(ev) }" @click="goDetail(ev)">
-          <span class="status-pill abs-tr" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
-          <div class="title-row">
-            <strong class="title">{{ ev.title }}</strong>
-            <span v-if="ev.notes" class="notes-inline">・ {{ ev.notes }}</span>
+          <div class="col1">
+            <CoverThumb :event="ev" size="sm" />
+            <span class="status-pill" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
           </div>
-          <div class="info-row">
-            <span v-if="ev.timeUnknown" class="time">{{ formatInTz(ev.startAt, ev.timezone).split(' ')[0] }} ・ 時間待確認</span>
-            <span v-else class="time">{{ formatInTz(ev.startAt, ev.timezone) }}</span>
-            <span class="tz">{{ tzCodeOf(ev.timezone) }}</span>
-            <span v-if="countdownInfo(ev)" class="countdown" :class="{ urgent: countdownInfo(ev).urgent }">
-              <template v-if="countdownInfo(ev).urgent">{{ countdownInfo(ev).label }}</template>
-              <template v-else><span class="num">{{ countdownInfo(ev).days }}</span> 天後</template>
-            </span>
-          </div>
-          <div v-if="ev.venue || ev.ticketPrice != null" class="meta-row">
-            <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
-            <span v-if="ev.ticketPrice != null" class="price">{{ formatPrice(ev.ticketPrice, ev.timezone) }}</span>
-          </div>
-          <div v-if="idolsOf(ev).length" class="chips">
-            <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
+          <div class="row-body">
+            <div class="title-row">
+              <strong class="title">{{ ev.title }}</strong>
+              <span v-if="ev.notes" class="notes-inline">・ {{ ev.notes }}</span>
+            </div>
+            <div class="info-row">
+              <span v-if="ev.timeUnknown" class="time">{{ formatInTz(ev.startAt, ev.timezone).split(' ')[0] }} ・ 時間待確認</span>
+              <span v-else class="time">{{ formatInTz(ev.startAt, ev.timezone) }}</span>
+              <span class="tz">{{ tzCodeOf(ev.timezone) }}</span>
+              <span v-if="countdownInfo(ev)" class="countdown" :class="{ urgent: countdownInfo(ev).urgent }">
+                <template v-if="countdownInfo(ev).urgent">{{ countdownInfo(ev).label }}</template>
+                <template v-else><span class="num">{{ countdownInfo(ev).days }}</span> 天後</template>
+              </span>
+            </div>
+            <div v-if="ev.venue || ev.ticketPrice != null" class="meta-row">
+              <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
+              <span v-if="ev.ticketPrice != null" class="price">{{ formatPrice(ev.ticketPrice, ev.timezone) }}</span>
+            </div>
+            <div v-if="idolsOf(ev).length" class="chips">
+              <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
+            </div>
           </div>
         </li>
       </ul>
@@ -265,10 +271,28 @@ watch(() => route.query.import, checkImportQuery)
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: .65rem .85rem;
-  padding-right: 7rem; /* room for absolute status pill (longest: 已抽到/已購票) */
   cursor: pointer;
-  display: flex; flex-direction: column; gap: .3rem;
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: .75rem;
   transition: transform .15s, box-shadow .15s;
+}
+.row-body {
+  position: relative;
+  display: flex; flex-direction: column; gap: .3rem;
+  min-width: 0;
+}
+.col1 {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  align-items: stretch;
+}
+.col1 .status-pill {
+  font-size: .68rem;
+  padding: .2rem .4rem;
+  text-align: center;
+  justify-content: center;
 }
 .agenda-row:hover {
   transform: translateY(-1px);
