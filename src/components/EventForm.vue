@@ -173,7 +173,7 @@ function submit() {
     <div class="grid-2">
       <label class="field">
         <span>票價（{{ currencyCode }}）</span>
-        <input v-model="ticketPrice" type="number" min="0" step="100" />
+        <input v-model="ticketPrice" type="number" min="0" step="1" inputmode="numeric" />
       </label>
       <label class="field">
         <span>購票連結</span>
