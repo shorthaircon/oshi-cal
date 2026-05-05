@@ -9,6 +9,7 @@ import EventForm from '../components/EventForm.vue'
 import IdolChip from '../components/IdolChip.vue'
 import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
 import { countdownInfo } from '../lib/countdown.js'
+import { formatPrice } from '../lib/currency.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -159,7 +160,7 @@ function exportIcs() {
           </dd>
           <template v-if="event.ticketPrice != null">
             <dt>票價</dt>
-            <dd class="dl-num">¥{{ event.ticketPrice.toLocaleString() }}</dd>
+            <dd class="dl-num">{{ formatPrice(event.ticketPrice, event.timezone) }}</dd>
           </template>
           <template v-if="event.ticketUrl">
             <dt>購票</dt>
@@ -290,6 +291,8 @@ function exportIcs() {
   margin-bottom: 1rem;
 }
 .past-tag {
+  display: inline-block;
+  white-space: nowrap;
   font-size: .65rem; padding: .15rem .55rem;
   border-radius: 999px;
   background: var(--gold); color: #fff;

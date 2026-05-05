@@ -1,14 +1,21 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { loadAll, replaceAll, markBackup, CURRENT_VERSION } from '../lib/storage.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { useEventsStore } from '../stores/events.js'
 import { useMetaStore } from '../stores/meta.js'
 import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
 
+const router = useRouter()
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
 const metaStore = useMetaStore()
+
+function goBack() {
+  if (window.history.length > 1) router.back()
+  else router.push('/me')
+}
 
 const fileInput = ref(null)
 const preview = ref(null) // { idolCount, eventCount, version, data, warning }
@@ -100,9 +107,15 @@ function stamp(d) {
 
 <template>
   <section class="view-settings">
-    <header class="page-head">
-      <div class="brand-mark">— Settings —</div>
-      <h2 class="t-h2">設定</h2>
+    <header class="settings-toolbar">
+      <button class="back-btn" type="button" @click="goBack">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        返回
+      </button>
+      <h2 class="toolbar-title">設定</h2>
+      <span class="toolbar-spacer"></span>
     </header>
 
     <div class="stage">
@@ -152,6 +165,44 @@ function stamp(d) {
 </template>
 
 <style scoped>
+.settings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .55rem .25rem;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: -.5rem 0 1.25rem;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .15rem;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: .55rem .85rem .55rem .55rem;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: .9rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all .15s;
+}
+.back-btn:hover { background: var(--bg); border-color: var(--ink); }
+.toolbar-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  margin: 0;
+  color: var(--ink);
+}
+.toolbar-spacer { width: 64px; }
 .page-head {
   text-align: center;
   margin-bottom: 1.5rem;

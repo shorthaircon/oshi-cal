@@ -60,7 +60,7 @@
 
   /* === TYPE FAMILIES =============================================== */
   --font-display: 'DM Serif Display', 'Playfair Display', Georgia, serif;
-  --font-day:     'DM Serif Display', 'Playfair Display', Georgia, serif;
+  --font-day:     'Inter', system-ui, sans-serif;
   --font-body:    'Inter', 'Noto Sans JP', -apple-system, 'Hiragino Sans', 'Yu Gothic UI', system-ui, sans-serif;
   --font-jp:      'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
   --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
@@ -70,7 +70,7 @@
   --font-nav:     'DM Mono', ui-monospace, 'SF Mono', monospace;
 
   /* Numerics — for time / price / dates / table cells */
-  --font-num:     'Inter', system-ui, sans-serif;
+  --font-num:     'DM Mono', ui-monospace, 'SF Mono', monospace;
 
   /* === TYPE SCALE (semantic) ====================================== */
   --h1-size:      4.5rem;   /* 72  — big month name */

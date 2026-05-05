@@ -6,6 +6,7 @@ import IdolsView from './views/IdolsView.vue'
 import EventsView from './views/EventsView.vue'
 import SettingsView from './views/SettingsView.vue'
 import EventDetailView from './views/EventDetailView.vue'
+import MeView from './views/MeView.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -16,6 +17,7 @@ export const router = createRouter({
     { path: '/events', name: 'events', component: EventsView },
     { path: '/event/:id', name: 'event-detail', component: EventDetailView },
     { path: '/idols', name: 'idols', component: IdolsView },
+    { path: '/me', name: 'me', component: MeView },
     { path: '/settings', name: 'settings', component: SettingsView },
   ],
 })

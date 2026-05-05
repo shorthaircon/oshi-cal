@@ -5,6 +5,7 @@ import { useIdolsStore } from '../stores/idols.js'
 import { STATUSES } from '../stores/events.js'
 import { isoToLocalInputInTz, localInputToIsoInTz } from '../lib/time.js'
 import { TZ_OPTIONS, DEFAULT_TZ, detectTimezone } from '../lib/timezones.js'
+import { currencyOf } from '../lib/currency.js'
 import TimePickerClock from './TimePickerClock.vue'
 
 const router = useRouter()
@@ -28,6 +29,8 @@ const status = ref('going')
 const ticketPrice = ref('')
 const ticketUrl = ref('')
 const notes = ref('')
+
+const currencyCode = computed(() => currencyOf(timezone.value).code)
 
 function loadFromInitial(v) {
   title.value = v?.title ?? ''
@@ -169,7 +172,7 @@ function submit() {
 
     <div class="grid-2">
       <label class="field">
-        <span>票價（JPY）</span>
+        <span>票價（{{ currencyCode }}）</span>
         <input v-model="ticketPrice" type="number" min="0" step="100" />
       </label>
       <label class="field">

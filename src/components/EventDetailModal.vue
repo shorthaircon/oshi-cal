@@ -7,6 +7,7 @@ import { tzCodeOf } from '../lib/timezones.js'
 import EventForm from './EventForm.vue'
 import IdolChip from './IdolChip.vue'
 import { serializeIcs, downloadIcs } from '../lib/icalSerializer.js'
+import { formatPrice } from '../lib/currency.js'
 
 const props = defineProps({
   event: { type: Object, default: null },
@@ -122,7 +123,7 @@ function exportIcs() {
             </dd>
             <template v-if="event.ticketPrice != null">
               <dt>票價</dt>
-              <dd class="dl-num">¥{{ event.ticketPrice.toLocaleString() }}</dd>
+              <dd class="dl-num">{{ formatPrice(event.ticketPrice, event.timezone) }}</dd>
             </template>
             <template v-if="event.ticketUrl">
               <dt>購票</dt>

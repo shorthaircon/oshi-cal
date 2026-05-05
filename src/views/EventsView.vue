@@ -10,6 +10,7 @@ import EmptyState from '../components/EmptyState.vue'
 import { formatInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
 import { countdownInfo } from '../lib/countdown.js'
+import { formatPrice } from '../lib/currency.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,8 +24,19 @@ function goDetail(ev) {
   router.push({ name: 'event-detail', params: { id: ev.id } })
 }
 
+const filterIdolId = computed(() => route.query.idol || null)
+const filterIdol = computed(() =>
+  filterIdolId.value ? idolsStore.byId(filterIdolId.value) : null
+)
+function clearIdolFilter() {
+  router.replace({ path: '/events', query: {} })
+}
+
 const sorted = computed(() => {
-  const all = eventsStore.events.filter(ev => ev.startAt)
+  let all = eventsStore.events.filter(ev => ev.startAt)
+  if (filterIdolId.value) {
+    all = all.filter(ev => ev.idolIds?.includes(filterIdolId.value))
+  }
   const now = Date.now()
   const future = all
     .filter(ev => new Date(ev.startAt).getTime() >= now)
@@ -102,7 +114,14 @@ watch(() => route.query.import, checkImportQuery)
     />
 
     <div v-if="mode === 'list'">
-      <EmptyState v-if="sorted.length === 0" />
+      <div v-if="filterIdol" class="filter-chip">
+        <span>已過濾：<strong>{{ filterIdol.name }}</strong></span>
+        <button type="button" class="x" @click="clearIdolFilter" aria-label="清除篩選">×</button>
+      </div>
+      <EmptyState v-if="sorted.length === 0 && !filterIdol" />
+      <p v-else-if="sorted.length === 0 && filterIdol" class="empty-filter">
+        這位推し還沒有活動紀錄
+      </p>
       <ul v-else class="agenda-list">
         <li v-for="ev in sorted" :key="ev.id" class="agenda-row" :class="{ past: isPast(ev) }" @click="goDetail(ev)">
           <span class="status-pill abs-tr" :class="`s-${ev.status}`">{{ statusLabel(ev.status) }}</span>
@@ -121,7 +140,7 @@ watch(() => route.query.import, checkImportQuery)
           </div>
           <div v-if="ev.venue || ev.ticketPrice != null" class="meta-row">
             <span v-if="ev.venue" class="venue">📍 {{ ev.venue }}</span>
-            <span v-if="ev.ticketPrice != null" class="price">¥{{ ev.ticketPrice.toLocaleString() }}</span>
+            <span v-if="ev.ticketPrice != null" class="price">{{ formatPrice(ev.ticketPrice, ev.timezone) }}</span>
           </div>
           <div v-if="idolsOf(ev).length" class="chips">
             <IdolChip v-for="i in idolsOf(ev)" :key="i.id" :idol="i" size="sm" />
@@ -207,6 +226,34 @@ watch(() => route.query.import, checkImportQuery)
   padding: 2rem 0;
   font-family: var(--font-jp);
 }
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--bg);
+  border: 1px solid var(--berry);
+  border-radius: 999px;
+  padding: .35rem .35rem .35rem .85rem;
+  margin: 0 0 .85rem;
+  font-family: var(--font-jp);
+  font-size: .85rem;
+  color: var(--ink);
+}
+.filter-chip strong { color: var(--berry); font-weight: 600; }
+.filter-chip .x {
+  background: var(--berry); color: #fff; border: none;
+  width: 1.4rem; height: 1.4rem; border-radius: 50%;
+  font-size: 1rem; line-height: 1; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+}
+.filter-chip .x:hover { background: var(--ink); }
+.empty-filter {
+  text-align: center;
+  color: var(--ink-faint);
+  padding: 2rem 0;
+  font-family: var(--font-jp);
+}
 .agenda-list {
   list-style: none;
   padding: 0; margin: 0;
@@ -218,7 +265,7 @@ watch(() => route.query.import, checkImportQuery)
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: .65rem .85rem;
-  padding-right: 5.5rem; /* room for absolute status pill */
+  padding-right: 7rem; /* room for absolute status pill (longest: 已抽到/已購票) */
   cursor: pointer;
   display: flex; flex-direction: column; gap: .3rem;
   transition: transform .15s, box-shadow .15s;

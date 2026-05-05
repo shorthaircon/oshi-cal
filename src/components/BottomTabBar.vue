@@ -61,11 +61,11 @@ const showBackupDot = computed(() => needsBackup({
       <span class="label">推し</span>
     </router-link>
     <router-link
-      to="/settings"
+      to="/me"
       role="tab"
-      :class="['tab', { on: route.path === '/settings' }]"
+      :class="['tab', { on: route.path === '/me' || route.path === '/settings' }]"
     >
-      <span class="label">設定</span>
+      <span class="label">個人</span>
       <span v-if="showBackupDot" class="dot" title="14 天未備份"></span>
     </router-link>
   </nav>

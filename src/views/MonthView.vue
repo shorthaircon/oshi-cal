@@ -252,7 +252,8 @@ const monthOshiCount = computed(() => {
 .cell:hover { background: #fff; }
 .cell .num {
   font-family: var(--font-day);
-  font-weight: 400;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   font-size: 1.15rem;
   color: var(--ink);
   line-height: 1;
@@ -260,7 +261,7 @@ const monthOshiCount = computed(() => {
 .cell.today {
   box-shadow: inset 0 4px 0 var(--berry);
 }
-.cell.today .num { color: var(--ink); font-weight: 900; }
+.cell.today .num { color: var(--ink); font-weight: 700; }
 .cell.out { background: var(--bg); }
 .cell.out .num { color: var(--ink-soft); opacity: .58; }
 .cell.sun .num { color: var(--berry); }
