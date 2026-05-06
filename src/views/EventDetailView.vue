@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useEventsStore, STATUSES } from '../stores/events.js'
+import { useEventsStore, STATUSES, EVENT_TYPES } from '../stores/events.js'
 import { useIdolsStore } from '../stores/idols.js'
 import { formatInTz, formatDateInTz, formatTimeInTz } from '../lib/time.js'
 import { tzCodeOf } from '../lib/timezones.js'
@@ -31,6 +31,9 @@ const idols = computed(() =>
 )
 const statusLabel = computed(() =>
   STATUSES.find(s => s.value === event.value?.status)?.label ?? event.value?.status
+)
+const typeLabel = computed(() =>
+  EVENT_TYPES.find(t => t.value === event.value?.type)?.label ?? '演唱會'
 )
 const isPast = computed(() => {
   if (!event.value?.startAt) return false
@@ -65,6 +68,30 @@ function onCoverChange(newId) {
   if (!event.value) return
   eventsStore.setCover(event.value.id, newId)
 }
+
+const isStatusToggleable = computed(() =>
+  event.value?.status === 'going' || event.value?.status === 'ticketed'
+)
+const pillBumping = ref(false)
+function onStatusClick() {
+  if (!event.value || !isStatusToggleable.value) return
+  const next = event.value.status === 'going' ? 'ticketed' : 'going'
+  eventsStore.update(event.value.id, { status: next })
+  pillBumping.value = true
+  setTimeout(() => { pillBumping.value = false }, 220)
+}
+
+// Auto-transition: 已購票 + startAt < now → 已參加 (when entering this view)
+function autoTransitionThis() {
+  if (!event.value) return
+  if (event.value.status !== 'ticketed') return
+  if (!event.value.startAt) return
+  if (new Date(event.value.startAt).getTime() < Date.now()) {
+    eventsStore.update(event.value.id, { status: 'attended' })
+  }
+}
+onMounted(autoTransitionThis)
+watch(() => route.params.id, autoTransitionThis)
 
 function exportIcs() {
   if (!event.value) return
@@ -166,8 +193,24 @@ function exportIcs() {
           </template>
           <dt>地點</dt>
           <dd>{{ event.venue || '—' }}</dd>
+          <dt>類型</dt>
+          <dd>{{ typeLabel }}</dd>
           <dt>狀態</dt>
-          <dd><span class="status-pill" :class="`s-${event.status}`">{{ statusLabel }}</span></dd>
+          <dd>
+            <button
+              v-if="isStatusToggleable"
+              type="button"
+              class="status-pill clickable"
+              :class="[`s-${event.status}`, { bump: pillBumping }]"
+              :title="event.status === 'going' ? '點擊改為「已購票」' : '點擊改回「預定參加」'"
+              @click="onStatusClick"
+            >{{ statusLabel }} <span class="hint">↺</span></button>
+            <span
+              v-else
+              class="status-pill"
+              :class="`s-${event.status}`"
+            >{{ statusLabel }}</span>
+          </dd>
           <dt>推し</dt>
           <dd class="dd-chips">
             <span v-if="!idols.length" class="muted">—</span>
@@ -384,12 +427,32 @@ function exportIcs() {
 }
 
 .status-pill {
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; gap: .35rem;
   padding: .2rem .75rem; min-height: 1.6rem;
   box-sizing: border-box; border-radius: 999px;
   font-family: var(--font-jp); font-size: .85rem;
   font-weight: 500; line-height: 1;
   border: 1px solid rgba(0,0,0,0.12);
+}
+.status-pill.clickable {
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, filter .15s;
+}
+.status-pill.clickable:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+}
+.status-pill.bump {
+  animation: pillBump .22s ease-out;
+}
+@keyframes pillBump {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(.92); }
+  100% { transform: scale(1); }
+}
+.status-pill .hint {
+  opacity: .6;
+  font-size: .75rem;
 }
 .s-going    { background: var(--status-going);    color: var(--status-going-fg);}
 .s-waitlist { background: var(--status-waitlist); color: var(--status-waitlist-fg);}

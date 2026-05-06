@@ -1,5 +1,5 @@
 const KEY = 'oshi-cal:data'
-const CURRENT_VERSION = 4
+const CURRENT_VERSION = 5
 
 const EMPTY = {
   version: CURRENT_VERSION,
@@ -61,6 +61,10 @@ function migrate(data) {
     data = migrateTo4(data)
     v = 4
   }
+  if (v < 5) {
+    data = migrateTo5(data)
+    v = 5
+  }
   return normalize({ ...data, version: CURRENT_VERSION })
 }
 
@@ -98,6 +102,17 @@ function migrateTo4(data) {
   const idols = Array.isArray(data.idols) ? [...data.idols] : []
   idols.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'))
   return { ...data, idols }
+}
+
+// v4 → v5: every event gets a type. Default 'concert' (most common in user's history).
+function migrateTo5(data) {
+  return {
+    ...data,
+    events: (data.events ?? []).map(ev => ({
+      ...ev,
+      type: ev.type ?? 'concert',
+    })),
+  }
 }
 
 function normalize(data) {

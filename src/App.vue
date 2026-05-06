@@ -8,11 +8,14 @@ import { installClipboardWatcher } from './lib/clipboardDetect.js'
 import BottomTabBar from './components/BottomTabBar.vue'
 import ClipboardBanner from './components/ClipboardBanner.vue'
 
-onMounted(() => installClipboardWatcher())
-
 const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
 const metaStore = useMetaStore()
+
+onMounted(() => {
+  installClipboardWatcher()
+  eventsStore.autoTransitionPastTicketed()
+})
 
 const showDot = computed(() => needsBackup({
   idols: idolsStore.idols,

@@ -167,6 +167,7 @@ function confirmImport() {
     timeUnknown: !!parsed.value.timeUnknown,
     idolIds: resolveIdolIds(selections.value),
     status: 'going',
+    type: 'concert',
     coverId: coverId.value,
   })
   coverId.value = null
@@ -186,6 +187,7 @@ function confirmBatchImport() {
       timeUnknown: !!item.event.timeUnknown,
       idolIds: resolveIdolIds(item.idolSelections),
       status: 'going',
+    type: 'concert',
     })
   }
   emit('done')

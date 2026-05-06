@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdolsStore } from '../stores/idols.js'
-import { STATUSES } from '../stores/events.js'
+import { STATUSES, EVENT_TYPES } from '../stores/events.js'
 import { isoToLocalInputInTz, localInputToIsoInTz } from '../lib/time.js'
 import { TZ_OPTIONS, DEFAULT_TZ, detectTimezone } from '../lib/timezones.js'
 import { currencyOf } from '../lib/currency.js'
@@ -30,6 +30,7 @@ const timezone = ref(DEFAULT_TZ)
 const clockOpen = ref(false)
 const timeUnknown = ref(false)
 const status = ref('going')
+const type = ref('concert')
 const ticketPrice = ref('')
 const ticketUrl = ref('')
 const notes = ref('')
@@ -64,6 +65,7 @@ function loadFromInitial(v) {
   }
   venue.value = v?.venue ?? ''
   status.value = v?.status ?? 'going'
+  type.value = v?.type ?? 'concert'
   ticketPrice.value = v?.ticketPrice != null ? Number(v.ticketPrice).toLocaleString() : ''
   ticketUrl.value = v?.ticketUrl ?? ''
   notes.value = v?.notes ?? ''
@@ -116,6 +118,7 @@ function submit() {
     endAt: null,
     venue: venue.value.trim(),
     status: status.value,
+    type: type.value,
     timeUnknown: timeUnknown.value,
     ticketPrice: ticketPrice.value === '' ? null : Number(String(ticketPrice.value).replace(/,/g, '')),
     ticketUrl: ticketUrl.value.trim(),
@@ -222,12 +225,20 @@ const formEvent = computed(() => ({
       <input v-model="venue" type="text" maxlength="200" />
     </label>
 
-    <label class="field">
-      <span>我的狀態</span>
-      <select v-model="status">
-        <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
-      </select>
-    </label>
+    <div class="grid-2">
+      <label class="field">
+        <span>類型</span>
+        <select v-model="type">
+          <option v-for="t in EVENT_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>我的狀態</span>
+        <select v-model="status">
+          <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+        </select>
+      </label>
+    </div>
 
     <div class="grid-2">
       <label class="field">

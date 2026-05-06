@@ -12,6 +12,7 @@ import { tzCodeOf } from '../lib/timezones.js'
 import { countdownInfo } from '../lib/countdown.js'
 import { formatPrice } from '../lib/currency.js'
 import CoverThumb from '../components/CoverThumb.vue'
+import EventTypeSegment from '../components/EventTypeSegment.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,15 +30,35 @@ const filterIdolId = computed(() => route.query.idol || null)
 const filterIdol = computed(() =>
   filterIdolId.value ? idolsStore.byId(filterIdolId.value) : null
 )
+const filterType = computed(() => route.query.type || '')
+const attendedOnly = computed(() => route.query.attended === '1')
+
 function clearIdolFilter() {
-  router.replace({ path: '/events', query: {} })
+  const q = { ...route.query }
+  delete q.idol
+  router.replace({ path: '/events', query: q })
+}
+function toggleAttended() {
+  const q = { ...route.query }
+  if (attendedOnly.value) delete q.attended
+  else q.attended = '1'
+  router.replace({ path: '/events', query: q })
 }
 
-const sorted = computed(() => {
+// Events filtered by type only (for attendedCount preview number)
+const typeFiltered = computed(() => {
   let all = eventsStore.events.filter(ev => ev.startAt)
-  if (filterIdolId.value) {
-    all = all.filter(ev => ev.idolIds?.includes(filterIdolId.value))
-  }
+  if (filterType.value) all = all.filter(ev => ev.type === filterType.value)
+  if (filterIdolId.value) all = all.filter(ev => ev.idolIds?.includes(filterIdolId.value))
+  return all
+})
+const attendedCountInScope = computed(() =>
+  typeFiltered.value.filter(ev => ev.status === 'attended').length
+)
+
+const sorted = computed(() => {
+  let all = typeFiltered.value
+  if (attendedOnly.value) all = all.filter(ev => ev.status === 'attended')
   const now = Date.now()
   const future = all
     .filter(ev => new Date(ev.startAt).getTime() >= now)
@@ -115,6 +136,17 @@ watch(() => route.query.import, checkImportQuery)
     />
 
     <div v-if="mode === 'list'">
+      <div class="filter-bar">
+        <EventTypeSegment />
+        <button
+          type="button"
+          class="attend-chip"
+          :class="{ on: attendedOnly }"
+          @click="toggleAttended"
+        >
+          {{ attendedOnly ? '✓' : '☐' }} 只看已參戰 ({{ attendedCountInScope }})
+        </button>
+      </div>
       <div v-if="filterIdol" class="filter-chip">
         <span>已過濾：<strong>{{ filterIdol.name }}</strong></span>
         <button type="button" class="x" @click="clearIdolFilter" aria-label="清除篩選">×</button>
@@ -231,6 +263,30 @@ watch(() => route.query.import, checkImportQuery)
   color: var(--ink-faint);
   padding: 2rem 0;
   font-family: var(--font-jp);
+}
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  align-items: flex-start;
+  margin-bottom: .85rem;
+}
+.attend-chip {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .4rem .85rem;
+  font-family: var(--font-jp);
+  font-size: .82rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .15s;
+}
+.attend-chip:hover { border-color: var(--ink); color: var(--ink); }
+.attend-chip.on {
+  background: var(--berry);
+  border-color: var(--berry);
+  color: #fff;
 }
 .filter-chip {
   display: inline-flex;

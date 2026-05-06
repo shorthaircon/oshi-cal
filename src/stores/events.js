@@ -12,6 +12,12 @@ export const STATUSES = [
   { value: 'cancelled', label: '已取消' },
 ]
 
+export const EVENT_TYPES = [
+  { value: 'concert',   label: '演唱會' },
+  { value: 'event',     label: '現地活動' },
+  { value: 'streaming', label: '線上演唱會' },
+]
+
 function emptyEvent() {
   return {
     id: uuid(),
@@ -29,6 +35,7 @@ function emptyEvent() {
     reminder: null,
     timezone: 'Asia/Tokyo',
     coverId: null,
+    type: 'concert',
   }
 }
 
@@ -73,6 +80,22 @@ export const useEventsStore = defineStore('events', {
       this.events.splice(idx, 1)
       this._persist()
       if (coverId) deleteImage(coverId).catch(() => {})
+    },
+
+    // 已購票 + startAt < now → 已參加.
+    // Returns count of events transitioned (for diagnostics).
+    autoTransitionPastTicketed(now = Date.now()) {
+      let n = 0
+      for (const ev of this.events) {
+        if (ev.status !== 'ticketed') continue
+        if (!ev.startAt) continue
+        if (new Date(ev.startAt).getTime() < now) {
+          ev.status = 'attended'
+          n++
+        }
+      }
+      if (n > 0) this._persist()
+      return n
     },
 
     setCover(id, newCoverId) {
