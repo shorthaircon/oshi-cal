@@ -12,9 +12,17 @@ const idolsStore = useIdolsStore()
 const eventsStore = useEventsStore()
 const metaStore = useMetaStore()
 
-onMounted(() => {
+onMounted(async () => {
   installClipboardWatcher()
   eventsStore.autoTransitionPastTicketed()
+  if (navigator.storage?.persist) {
+    try {
+      const granted = await navigator.storage.persist()
+      console.log('[storage] persistent:', granted)
+    } catch (e) {
+      console.warn('[storage] persist() failed', e)
+    }
+  }
 })
 
 const showDot = computed(() => needsBackup({
