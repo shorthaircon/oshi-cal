@@ -40,7 +40,7 @@ const BASE = import.meta.env.BASE_URL
     <header class="topbar">
       <div class="brand-mark">— Established for Idol Devotees —</div>
       <div class="brand-row">
-        <img :src="`${BASE}logo.svg`" width="36" height="36" alt="" />
+        <img :src="`${BASE}logo.svg`" class="brand-logo" alt="" />
         <router-link to="/" class="brand">oshi-cal</router-link>
       </div>
       <nav>
@@ -88,6 +88,7 @@ const BASE = import.meta.env.BASE_URL
   font-weight: 500;
 }
 .brand-row { display: flex; align-items: center; gap: 12px; }
+.brand-logo { height: 2.5rem; width: auto; display: block; }
 .brand {
   font-family: var(--font-display);
   font-size: 2.5rem;
@@ -136,7 +137,7 @@ nav a.router-link-active .label { border-bottom: 1px solid var(--berry); }
   .topbar nav { display: none; }
   .topbar .brand-mark { display: none; }
   .topbar { gap: .15rem; padding: .5rem 0 .55rem; margin-bottom: .65rem; }
-  .brand-row img { width: 26px; height: 26px; }
+  .brand-logo { height: 1.45rem; }
   .brand { font-size: 1.45rem; }
   .app { padding: .65rem .75rem calc(72px + env(safe-area-inset-bottom, 0)); }
 }

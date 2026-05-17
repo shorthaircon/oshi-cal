@@ -15,33 +15,36 @@ mkdirSync(OUT_DIR, { recursive: true })
 
 const svg = readFileSync(SRC)
 
+const PAPER = { r: 245, g: 239, b: 230, alpha: 1 }
+
+async function renderTicket(targetWidth) {
+  // ticket viewBox is 192×104 (aspect 1.846); fit-inside resize keeps it sharp
+  return sharp(svg).resize({ width: targetWidth, fit: 'inside' }).png().toBuffer()
+}
+
+async function composeIcon(size, innerRatio, outPath) {
+  const innerWidth = Math.round(size * innerRatio)
+  const ticket = await renderTicket(innerWidth)
+  await sharp({
+    create: { width: size, height: size, channels: 4, background: PAPER },
+  })
+    .composite([{ input: ticket, gravity: 'center' }])
+    .png()
+    .toFile(outPath)
+}
+
 async function plain(size, name) {
-  await sharp(svg).resize(size, size).png().toFile(resolve(OUT_DIR, name))
+  await composeIcon(size, 0.86, resolve(OUT_DIR, name))
   console.log('✓', name)
 }
 
 async function maskable(size, name) {
-  // Maskable icons: content must sit inside 80% safe zone with opaque background.
-  const inner = Math.round(size * 0.78)
-  const bg = { r: 245, g: 239, b: 230, alpha: 1 } // paper color
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: bg },
-  })
-    .composite([{ input: await sharp(svg).resize(inner, inner).png().toBuffer() }])
-    .png()
-    .toFile(resolve(OUT_DIR, name))
+  await composeIcon(size, 0.66, resolve(OUT_DIR, name))
   console.log('✓', name)
 }
 
 async function appleTouch(size, name) {
-  // Apple touch icon: opaque background (iOS doesn't mask but doesn't like transparency)
-  const bg = { r: 245, g: 239, b: 230, alpha: 1 }
-  await sharp({
-    create: { width: size, height: size, channels: 4, background: bg },
-  })
-    .composite([{ input: await sharp(svg).resize(size, size).png().toBuffer() }])
-    .png()
-    .toFile(resolve(ROOT, 'public', name))
+  await composeIcon(size, 0.82, resolve(ROOT, 'public', name))
   console.log('✓', name)
 }
 

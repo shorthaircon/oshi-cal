@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <rect width="256" height="256" fill="#f5efe6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32 76 192 104">
   <defs>
     <mask id="ticketMask">
-      <rect width="256" height="256" fill="white"/>
+      <rect x="32" y="76" width="192" height="104" fill="white"/>
       <circle cx="184" cy="76" r="10" fill="black"/>
       <circle cx="184" cy="180" r="10" fill="black"/>
     </mask>
