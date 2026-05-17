@@ -1,10 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect x="2" y="2" width="60" height="60" rx="4" fill="#fdf0e6" stroke="#3b1f2b" stroke-width="2"></rect>
-  <path fill="#e7568f" d="M8 22 L56 22 L52 28 L56 34 L8 34 L12 28 Z"></path>
-  <path fill="#3b1f2b" d="M32 8 a7 7 0 1 0 5 12 a5 5 0 1 1 -5 -12 z"></path>
-  <circle cx="20" cy="46" r="2" fill="#3b1f2b"></circle>
-  <circle cx="28" cy="46" r="2" fill="#e7568f"></circle>
-  <circle cx="36" cy="46" r="2" fill="#3b1f2b"></circle>
-  <circle cx="44" cy="46" r="2" fill="#3b1f2b"></circle>
-  <line x1="14" y1="54" x2="50" y2="54" stroke="#3b1f2b" stroke-width="1"></line>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <rect width="256" height="256" fill="#f5efe6"/>
+  <defs>
+    <mask id="ticketMask">
+      <rect width="256" height="256" fill="white"/>
+      <circle cx="184" cy="76" r="10" fill="black"/>
+      <circle cx="184" cy="180" r="10" fill="black"/>
+    </mask>
+  </defs>
+  <g mask="url(#ticketMask)">
+    <rect x="32" y="76" width="192" height="104" rx="16" fill="#c14361"/>
+  </g>
+  <line x1="184" y1="90" x2="184" y2="166" stroke="#f5efe6" stroke-width="3" stroke-dasharray="3 5"/>
+  <polygon points="108,96 116,120 141,120 121,135 129,160 108,145 87,160 95,135 75,120 100,120"
+           fill="#f5efe6"
+           stroke="#f5efe6" stroke-width="10" stroke-linejoin="round"/>
 </svg>
